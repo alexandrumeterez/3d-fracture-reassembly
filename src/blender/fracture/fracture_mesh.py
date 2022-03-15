@@ -7,7 +7,7 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from mathutils import Matrix
 
 def LOG(text):
-	print(f'[INFO] {text}')
+	print(str('[INFO] ' + str(text)))
 
 class Scene(object):
 	def __init__(self):
@@ -15,7 +15,7 @@ class Scene(object):
 		self.bpyscene = bpy.context.scene
 
 	def select_all_meshes(self):
-		scene_objects = bpyscene.objects
+		scene_objects = self.bpyscene.objects
 		# Iterate through every object in the scene and select it
 		# if it's a mesh
 		for scene_object in scene_objects:
@@ -27,15 +27,15 @@ class Scene(object):
 			bpy.ops.mesh.primitive_cube_add(location=location)
 		elif name == 'cylinder':
 			bpy.ops.mesh.primitive_cylinder_add(location=location)
-		LOG(f"Added mesh {name} at {location}")
+		LOG("Added mesh " + name + " at " + str(location))
 	
 	def set_mode(self, mode):
 		if bpy.ops.object.mode_set.poll():
 			bpy.ops.object.mode_set(mode=mode)
-		LOG(f"Mode set to {mode}")
+		LOG("Mode set to " + mode)
 	
 	def get_and_fracture_object(self, cuts=40, shard_count=20, seed=0):
-		scene_objects = bpyscene.objects
+		scene_objects = self.bpyscene.objects
 
 		# Set as active the mesh in the scene
 		# Assumes only one MESH in the scene
@@ -45,12 +45,13 @@ class Scene(object):
 				scene_object.select = True
 		
 		active_scene_object = bpy.context.active_object
-		LOG(f"Active object: {active_scene_object.name}")
+		LOG("Active object: " + active_scene_object.name)
 		self.set_mode('EDIT')
 
 		# Create mesh bmesh object from the selected mesh object
-		mesh = bmesh.new().from_mesh(active_scene_object.data)
-
+		mesh = bmesh.new()
+		mesh.from_mesh(active_scene_object.data)
+		print(mesh)
 		# Subdivide the mesh into chunks
 		bmesh.ops.subdivide_edges(mesh, edges=mesh.edges, cuts=cuts, use_grid_fill=True)
 
@@ -83,7 +84,7 @@ class Scene(object):
 		bpy.ops.object.select_all(action='DESELECT')
 	
 	def save_all(self, path):
-		scene_objects = bpyscene.objects
+		scene_objects = self.bpyscene.objects
 		for scene_object in scene_objects:
 			scene_objects.active = scene_object
 			scene_object.select = True
@@ -93,4 +94,8 @@ class Scene(object):
 			scene_object.select = False
 
 if __name__ == '__main__':
-	pass # can't get modules to work :(
+	# scene = Scene()
+	# scene.add_empty_mesh("cube", (0,0,0))
+	# scene.get_and_fracture_object()
+	# scene.save_all()
+	pass
