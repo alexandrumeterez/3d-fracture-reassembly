@@ -5,6 +5,7 @@ from bpy.types import Operator
 from bpy.props import FloatVectorProperty, IntVectorProperty
 from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from mathutils import Matrix
+import argparse
 
 def LOG(text):
 	print(str('[INFO] ' + str(text)))
@@ -94,8 +95,14 @@ class Scene(object):
 			scene_object.select = False
 
 if __name__ == '__main__':
-	# scene = Scene()
-	# scene.add_empty_mesh("cube", (0,0,0))
-	# scene.get_and_fracture_object()
-	# scene.save_all()
-	pass
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--mesh', type=str, required=True)
+	parser.add_argument('--save_parh', type=str, required=True)
+	args = parser.parse_args()
+
+	assert args.mesh in ['cube', 'cylinder']
+
+	scene = Scene()
+	scene.add_empty_mesh(args.mesh, (0,0,0))
+	scene.get_and_fracture_object()
+	scene.save_all(args.save_path)

@@ -5,6 +5,7 @@ from compas_view2.app import App
 from compas.datastructures import Mesh, mesh_explode
 from compas.datastructures import mesh_transform_numpy
 from compas.geometry import Translation
+import argparse
 
 class MeshViewer(object):
 	def __init__(self):
@@ -27,6 +28,11 @@ class MeshViewer(object):
 
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--mesh_path', type=str, required=True)
+	parser.add_argument('--explode', action='store_true')
+
+	args = parser.parse_args()
+
 	mesh_viewer = MeshViewer()
-	mesh_viewer.visualize_mesh("/Users/alex/randomblendershit/Cube.obj")
-	# pass
+	mesh_viewer.visualize_mesh(args.mesh_path, args.explode)
