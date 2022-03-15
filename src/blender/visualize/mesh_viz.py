@@ -2,15 +2,16 @@ import os
 from compas.datastructures import Mesh
 from compas.utilities import i_to_rgb
 from compas_view2.app import App
-from compas.datastructures import Mesh,  mesh_connected_components, mesh_explode
+from compas.datastructures import Mesh, mesh_explode
 from compas.datastructures import mesh_transform_numpy
-from compas.geometry import matrix_from_axis_and_angle, Translation
+from compas.geometry import Translation
 
 class MeshViewer(object):
 	def __init__(self):
+		print("HERE")
 		self.viewer = App()
-	
-	def visualize_mesh(self, path, explode):
+		print("NO HERE")
+	def visualize_mesh(self, path, explode=False):
 		mesh = Mesh.from_obj(path)
 
 		if explode:
@@ -28,4 +29,5 @@ class MeshViewer(object):
 
 if __name__ == '__main__':
 	mesh_viewer = MeshViewer()
-	pass
+	# mesh_viewer.visualize_mesh("/Users/alex/randomblendershit/Cube_shard.003.obj")
+	# pass
