@@ -8,9 +8,8 @@ from compas.geometry import Translation
 
 class MeshViewer(object):
 	def __init__(self):
-		print("HERE")
 		self.viewer = App()
-		print("NO HERE")
+
 	def visualize_mesh(self, path, explode=False):
 		mesh = Mesh.from_obj(path)
 
@@ -29,5 +28,5 @@ class MeshViewer(object):
 
 if __name__ == '__main__':
 	mesh_viewer = MeshViewer()
-	# mesh_viewer.visualize_mesh("/Users/alex/randomblendershit/Cube_shard.003.obj")
+	mesh_viewer.visualize_mesh("/Users/alex/randomblendershit/Cube.obj")
 	# pass
