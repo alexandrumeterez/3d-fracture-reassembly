@@ -92,4 +92,5 @@ class Scene(object):
 				bpy.ops.export_scene.obj(filepath=os.path.join(path, scene_object.name + '.obj'), use_selection=True)
 			scene_object.select = False
 
-
+if __name__ == '__main__':
+	pass # can't get modules to work :(
