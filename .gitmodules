@@ -1,0 +1,3 @@
+[submodule "src/model/USIP"]
+	path = src/model/USIP
+	url = git@github.com:lijx10/USIP.git
