@@ -4,10 +4,10 @@ is_plot = False
 is_timing = True
 
 # ============= dataset ===============
-dataset_type = 'kitti'
-test_txt_folder = '/ssd/jiaxin/TSF_datasets/kitti-reg-test'
-numpy_folder = '/ssd/jiaxin/TSF_datasets/kitti/data_odometry_velodyne/numpy'
-output_folder = '/ssd/jiaxin/keypoints_knn_ball/kitti'
+# dataset_type = 'kitti'
+# test_txt_folder = '/ssd/jiaxin/TSF_datasets/kitti-reg-test'
+# numpy_folder = '/ssd/jiaxin/TSF_datasets/kitti/data_odometry_velodyne/numpy'
+# output_folder = '/ssd/jiaxin/keypoints_knn_ball/kitti'
 
 # dataset_type = 'oxford'
 # root_folder = '/ssd/jiaxin/TSF_datasets/oxford'
@@ -25,21 +25,30 @@ output_folder = '/ssd/jiaxin/keypoints_knn_ball/kitti'
 # root = '/ssd/jiaxin/TSF_datasets/modelnet40-test_rotated_numpy'
 # output_folder = '/ssd/jiaxin/keypoints_nosigma/modelnet'
 
+dataset_type = 'custom'
+root = None
+output_folder = None
+
+assert root is not None
+assert output_folder is not None
+
 
 gpu_id = 0
 
 is_ensure_keypoint_num = True
 desired_keypoint_num = 128
-NMS_radius = 0
+NMS_radius = 0.01
 noise_sigma = 0
 downsample_rate = 1
 # =============== method ================
 method = 'tsf'
-detector_model_path = '/data/tsf/oxford/checkpoints/save/detector/BALL-16384-512-r2k64-k16/best.pth'
+detector_model_path = None
+# detector_model_path = '/data/tsf/oxford/checkpoints/save/detector/BALL-16384-512-r2k64-k16/best.pth'
 # detector_model_path = '/data/tsf/scenenn/checkpoints/save/detector/5000-512-k1k32-full-3d/best.pth'
 # detector_model_path = '/data/tsf/match3d/checkpoints/save/detector/10240-512-k1k32-full-lambda100/best.pth'
 # detector_model_path = '/data/tsf/modelnet/checkpoints/save/no_sigma/lambda_1/5000-512k32-3d/best.pth'
 
+assert detector_model_path is not None, "Please specify the model path"
 
 # method = 'iss'
 iss_salient_radius = 2
@@ -54,7 +63,7 @@ radius = 1
 nms_threshold = 0.001
 threads = 0
 
-# method = 'sift'
+# method = 'sift' 
 min_scale = 0.5
 n_octaves = 4
 n_scales_per_octave = 8
@@ -349,6 +358,8 @@ if __name__ == '__main__':
                         desired_keypoint_num = frame_keypoint_np.shape[0]
                     sorted_sigma_idx = sorted_sigma_idx[0:desired_keypoint_num]
                     frame_keypoint_np = frame_keypoint_np[sorted_sigma_idx, ...]  # Mx3
+                    frame_sigma_np = frame_sigma_np[sorted_sigma_idx]  # M
+
             else:
                 frame_keypoint_np = anc_keypoints_list[b]
                 # assure at least one keypoint, by randomly selecting a point
@@ -386,12 +397,18 @@ if __name__ == '__main__':
                 if not os.path.isdir(output_folder_new):
                     os.makedirs(output_folder_new)
                 output_file = os.path.join(output_folder_new, '%d.bin' % anc_idx[b].item())
+            elif 'customnet' == dataset_type:
+                output_folder_new = output_folder
+                if not os.path.isdir(output_folder_new):
+                    os.makedirs(output_folder_new)
+                output_file = os.path.join(output_folder_new, '%d.bin' % anc_idx[b].item())
+                output_file_npy = os.path.join(output_folder_new, '%d.npy' % anc_idx[b].item())
             else:
                 assert False
             output = frame_keypoint_np
             output = output.astype(np.float32)
             output.tofile(output_file)
-
+            np.save(output_file_npy, output)
             # print info
             print(output_file + ': %d' % output.shape[0])
             keypoint_num_list.append(output.shape[0])
