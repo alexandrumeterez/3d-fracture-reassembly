@@ -14,10 +14,10 @@ class Options():
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='auto or gpu_ids seperated by comma.')
 
         self.parser.add_argument('--dataset', type=str, default='modelnet', help='modelnet / shrec / shapenet')
-        self.parser.add_argument('--dataroot', default='/ssd/jiaxin/USIP_datasets/modelnet40-normal_numpy/', help='path to images & laser point clouds')
+        self.parser.add_argument('--dataroot', default='/cluster/scratch/ameterez/3d_fracture/modelnet/modelnet40-normal_numpy/', help='path to images & laser point clouds')
         self.parser.add_argument('--classes', type=int, default=40, help='ModelNet40 or ModelNet10')
         self.parser.add_argument('--name', type=str, default='train', help='name of the experiment. It decides where to store samples and models')
-        self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
+        self.parser.add_argument('--checkpoints_dir', type=str, default='/cluster/scratch/ameterez/3d_fracture/checkpoints', help='models are saved here')
 
         self.parser.add_argument('--batch_size', type=int, default=4, help='input batch size')
         self.parser.add_argument('--input_pc_num', type=int, default=5000, help='# of input points')

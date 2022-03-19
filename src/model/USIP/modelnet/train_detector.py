@@ -2,7 +2,8 @@ import time
 import copy
 import numpy as np
 import math
-
+import sys
+sys.path.append('.')
 from modelnet.options_detector import Options
 opt = Options().parse()  # set CUDA_VISIBLE_DEVICES before import torch
 
