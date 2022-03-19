@@ -98,6 +98,120 @@ class ChamferLoss_Brute(nn.Module):
 
         return forward_loss + backward_loss, chamfer_pure, chamfer_weighted
 
+class ChamferLoss_Brute_1vN(nn.Module):
+    def __init__(self, opt):
+        super(ChamferLoss_Brute, self).__init__()
+        self.opt = opt
+        self.dimension = 3
+
+    def forward(self, pc_src_input, pc_dst_input, sigma_src=None, sigma_dst=None):
+        '''
+        :param pc_src_input: Bx3xM Tensor in GPU
+        :param pc_dst_input: Bx3xN Tensor in GPU
+        :param sigma_src: BxM Tensor in GPU
+        :param sigma_dst: BxN Tensor in GPU
+        :return:
+        '''
+
+        B, M = pc_src_input.size()[0], pc_src_input.size()[2]
+        N = pc_dst_input.size()[2]
+
+        pc_src_input_expanded = pc_src_input.unsqueeze(3).expand(B, 3, M, N)
+        pc_dst_input_expanded = pc_dst_input.unsqueeze(2).expand(B, 3, M, N)
+
+        # the gradient of norm is set to 0 at zero-input. There is no need to use custom norm anymore.
+        diff = torch.norm(pc_src_input_expanded - pc_dst_input_expanded, dim=1, keepdim=False)  # BxMxN
+
+        if sigma_src is None or sigma_dst is None:
+            # pc_src vs selected pc_dst, M
+            src_dst_min_dist, _ = torch.min(diff, dim=2, keepdim=False)  # BxM
+            forward_loss = src_dst_min_dist
+
+            # pc_dst vs selected pc_src, N
+            dst_src_min_dist, _ = torch.min(diff, dim=1, keepdim=False)  # BxN
+            backward_loss = dst_src_min_dist
+
+            chamfer_pure = forward_loss + backward_loss
+            chamfer_weighted = chamfer_pure
+        else:
+            # pc_src vs selected pc_dst, M
+            src_dst_min_dist, src_dst_I = torch.min(diff, dim=2, keepdim=False)  # BxM, BxM
+            selected_sigma_dst = torch.gather(sigma_dst, dim=1, index=src_dst_I)  # BxN -> BxM
+            sigma_src_dst = (sigma_src + selected_sigma_dst) / 2
+            forward_loss = (torch.log(sigma_src_dst) + src_dst_min_dist / sigma_src_dst).mean()
+
+            # pc_dst vs selected pc_src, N
+            dst_src_min_dist, dst_src_I = torch.min(diff, dim=1, keepdim=False)  # BxN, BxN
+            selected_sigma_src = torch.gather(sigma_src, dim=1, index=dst_src_I)  # BxM -> BxN
+            sigma_dst_src = (sigma_dst + selected_sigma_src) / 2
+            backward_loss = (torch.log(sigma_dst_src) + dst_src_min_dist / sigma_dst_src).mean()
+
+            # loss that do not involve in optimization
+            chamfer_pure = (src_dst_min_dist.mean() + dst_src_min_dist.mean()).detach()
+            weight_src_dst = (1.0/sigma_src_dst) / torch.mean(1.0/sigma_src_dst)
+            weight_dst_src = (1.0/sigma_dst_src) / torch.mean(1.0/sigma_dst_src)
+            chamfer_weighted = ((weight_src_dst * src_dst_min_dist).mean() +
+                                (weight_dst_src * dst_src_min_dist).mean()).detach()
+
+        return 2.0 * forward_loss, chamfer_pure, chamfer_weighted
+
+class ChamferLoss_Brute_FN(nn.Module):
+    def __init__(self, opt):
+        super(ChamferLoss_Brute, self).__init__()
+        self.opt = opt
+        self.dimension = 3
+
+    def forward(self, pc_src_input, pc_dst_input, sigma_src=None, sigma_dst=None):
+        '''
+        :param pc_src_input: Bx3xM Tensor in GPU
+        :param pc_dst_input: Bx3xN Tensor in GPU
+        :param sigma_src: BxM Tensor in GPU
+        :param sigma_dst: BxN Tensor in GPU
+        :return:
+        '''
+
+        B, M = pc_src_input.size()[0], pc_src_input.size()[2]
+        N = pc_dst_input.size()[2]
+
+        pc_src_input_expanded = pc_src_input.unsqueeze(3).expand(B, 3, M, N)
+        pc_dst_input_expanded = pc_dst_input.unsqueeze(2).expand(B, 3, M, N)
+
+        # the gradient of norm is set to 0 at zero-input. There is no need to use custom norm anymore.
+        diff = torch.norm(pc_src_input_expanded - pc_dst_input_expanded, dim=1, keepdim=False)  # BxMxN
+
+        if sigma_src is None or sigma_dst is None:
+            # pc_src vs selected pc_dst, M
+            src_dst_min_dist, _ = torch.min(diff, dim=2, keepdim=False)  # BxM
+            forward_loss = src_dst_min_dist
+
+            # pc_dst vs selected pc_src, N
+            dst_src_min_dist, _ = torch.min(diff, dim=1, keepdim=False)  # BxN
+            backward_loss = dst_src_min_dist
+
+            chamfer_pure = forward_loss + backward_loss
+            chamfer_weighted = chamfer_pure
+        else:
+            # pc_src vs selected pc_dst, M
+            src_dst_min_dist, src_dst_I = torch.min(diff, dim=2, keepdim=False)  # BxM, BxM
+            selected_sigma_dst = torch.gather(sigma_dst, dim=1, index=src_dst_I)  # BxN -> BxM
+            sigma_src_dst = (sigma_src + selected_sigma_dst) / 2
+            forward_loss = (torch.log(sigma_src_dst) + src_dst_min_dist / sigma_src_dst).mean()
+
+            # pc_dst vs selected pc_src, N
+            dst_src_min_dist, dst_src_I = torch.min(diff, dim=1, keepdim=False)  # BxN, BxN
+            selected_sigma_src = torch.gather(sigma_src, dim=1, index=dst_src_I)  # BxM -> BxN
+            sigma_dst_src = (sigma_dst + selected_sigma_src) / 2
+            backward_loss = (torch.log(sigma_dst_src) + dst_src_min_dist / sigma_dst_src).mean()
+
+            # loss that do not involve in optimization
+            chamfer_pure = (src_dst_min_dist.mean() + dst_src_min_dist.mean()).detach()
+            weight_src_dst = (1.0/sigma_src_dst) / torch.mean(1.0/sigma_src_dst)
+            weight_dst_src = (1.0/sigma_dst_src) / torch.mean(1.0/sigma_dst_src)
+            chamfer_weighted = ((weight_src_dst * src_dst_min_dist).mean() +
+                                (weight_dst_src * dst_src_min_dist).mean()).detach()
+
+        return forward_loss + backward_loss, chamfer_pure, chamfer_weighted
+
 
 class KeypointOnPCLoss(nn.Module):
     def __init__(self, opt):
