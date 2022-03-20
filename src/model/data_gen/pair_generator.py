@@ -9,13 +9,12 @@ class Generator(object):
 	def __init__(self, input_dir, output_dir):
 		self.input_dir = input_dir
 		self.output_dir = output_dir
-
 		Path(f"{self.output_dir}/connected_1vN/fragments_1").mkdir(parents=True, exist_ok=True)
 		Path(f"{self.output_dir}/connected_1vN/fragments_2").mkdir(parents=True, exist_ok=True)
 		Path(f"{self.output_dir}/flipped_normals/fragments_1").mkdir(parents=True, exist_ok=True)
 		Path(f"{self.output_dir}/flipped_normals/fragments_2").mkdir(parents=True, exist_ok=True)
 	
-	def generate(self, max_parts=1000, threshold=1e-3, needed_matches=100, sigma=0.001):
+	def generate(self, max_parts=1000, threshold=1, needed_matches=100, sigma=0.001):
 		names1_1vN=[]
 		names2_1vN=[]
 		names_FN=[]
@@ -25,14 +24,16 @@ class Generator(object):
 		m = 0
 		p = 0
 
-		for part in range(max_parts):
+		for part in range(1, max_parts):
 			try:
-				fragment.append(np.load(f'{self.input_dir}/{part}.npy'))
-			except:
-				n_loaded_parts = part
+				print(f'{self.input_dir}/{part}.npy')
+				fragment.append(np.load(f'{self.input_dir}/{part}.npy')[:10000])
+			except Exception as e:
+				print(e)
+				n_loaded_parts = part - 1
 				print(f'[INFO] {n_loaded_parts} parts loaded')
 				break
-		
+		print(len(fragment))
 		print('[INFO] Saving connected 1vN')
 		for i in range(n_loaded_parts - 1):
 			fragment_set=np.zeros((1,6))
@@ -40,7 +41,7 @@ class Generator(object):
 			for j in range(i+1, n_loaded_parts):
 				# search for corresponding points in two parts (distance below a treshold)
 				matches = np.count_nonzero(cdist(fragment[i][:,:3],fragment[j][:,:3]) < threshold)
-				print(f'[INFO] Fragments ({i} - {j}) have {matches} matches')
+				print(f'[INFO] Fragments ({i+1} - {j+1}) have {matches} matches')
 
 				# if there are more than 100 matches, the parts are considered neighbours
 				if matches > needed_matches:

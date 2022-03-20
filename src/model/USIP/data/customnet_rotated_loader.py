@@ -15,10 +15,9 @@ import h5py
 
 def make_dataset_modelnet40(root):
     dataset = []
-    ### ulsteger: edited the for loop to match our data structure
-    for i in range(6): ### ulsteger: CHANGE to number of fragments in current folder, change with every dataset
+    for i in range(6): 
         folder = ''
-        item = (os.path.join(root, folder, 'brick_part_%d.npy' % i), i, 0) ### ulsteger: CHANGE to name of current dataset
+        item = (os.path.join(root, folder, 'brick_part_%d.npy' % i), i, 0)
         dataset.append(item)
 
     return dataset
@@ -41,9 +40,9 @@ class FarthestSampler:
         return farthest_pts
 
 
-class ModelNet_Rotated_Loader(data.Dataset):
+class CustomNet_Rotated_Loader(data.Dataset):
     def __init__(self, root, opt):
-        super(ModelNet_Rotated_Loader, self).__init__()
+        super(CustomNet_Rotated_Loader, self).__init__()
         self.root = root
         self.opt = opt
 

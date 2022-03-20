@@ -31,7 +31,6 @@ def make_dataset_modelnet40_10k(root, mode, opt, part):
     rows = round(math.sqrt(opt.node_num))
     cols = rows
     
-    ### ulsteger: CHANGE folder, depending on dataset to use (connected_1vN, flipped_normals)
     ### load each fragment of the pairs seperately (part 1 and part 2)
     if part == 1:
       folder = 'connected_1vN/fragments_1'
@@ -40,21 +39,16 @@ def make_dataset_modelnet40_10k(root, mode, opt, part):
     else:
       raise Exception('Fragment part error.')
     
-    ### ulsteger: CHANGE number of samples, depending on the number of training and test samples (in folders above)
-    if 'train' == mode:
-        nsamples=468
-    elif 'test' == mode:
-        nsamples=142
-    else:
-        raise Exception('Network mode error.')
+    # if 'train' == mode:
+    #     nsamples=468
+    # elif 'test' == mode:
+    #     nsamples=142
+    # else:
+    #     raise Exception('Network mode error.')
     
-    ### ulsteger: loop through the samples and save their paths
+    nsamples = opt.nsamples_train if mode == 'train' else opt.nsamples_test
+
     for i in range(nsamples):
-        
-        ### ulsteger: problem in data generation, skip corrupted fragments (fragments with less than 1000 vertices)
-        if 'train' == mode and i in [141, 389, 461, 463, 467]: continue
-        if 'test' == mode and i in [41, 42, 43, 125]: continue
-        
         # som node locations
         som_nodes_folder = '%dx%d_som_nodes' % (rows, cols)
 
@@ -131,9 +125,9 @@ class FarthestSampler:
         return farthest_pts
 
 
-class ModelNet_Shrec_Loader(data.Dataset):
+class CustomNet_Shrec_Loader(data.Dataset):
     def __init__(self, root, mode, opt):
-        super(ModelNet_Shrec_Loader, self).__init__()
+        super(CustomNet_Shrec_Loader, self).__init__()
         self.root = root
         self.opt = opt
         self.mode = mode
@@ -153,7 +147,7 @@ class ModelNet_Shrec_Loader(data.Dataset):
         return len(self.dataset_1)
 
     def get_instance_unaugmented_np(self, index, part):
-        if self.opt.dataset == 'modelnet':
+        if self.opt.dataset == 'customnet':
             if part == 1:
               pc_np_file, som_node_np_file = self.dataset_1[index]
             elif part == 2:

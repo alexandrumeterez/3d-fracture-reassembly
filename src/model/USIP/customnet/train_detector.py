@@ -3,7 +3,10 @@ import copy
 import numpy as np
 import math
 import sys
+import wandb
+
 sys.path.append('.')
+from pprint import pprint
 from customnet.options_detector import Options
 opt = Options().parse()  # set CUDA_VISIBLE_DEVICES before import torch
 
@@ -17,6 +20,7 @@ import numpy as np
 
 from models.keypoint_detector import ModelDetector
 from data.customnet_shrec_loader import CustomNet_Shrec_Loader
+from data.customnet_rotated_loader import CustomNet_Rotated_Loader
 from util.visualizer import Visualizer
 
 def model_state_dict_parallel_convert(state_dict, mode):
@@ -49,12 +53,16 @@ def model_state_dict_convert_auto(state_dict, gpu_ids):
             raise Exception('Error in model_state_dict_convert_auto')
 
 if __name__=='__main__':
+    wandb.init(project="fracture_reassembly", entity="hacking_fractures", config=opt)
+    
     trainset = CustomNet_Shrec_Loader(opt.dataroot, 'train', opt)
+    # trainset = CustomNet_Rotated_Loader(opt.dataroot, 'train', opt)
     dataset_size = len(trainset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.nThreads, drop_last=True)
     print('#training point clouds = %d' % len(trainset))
 
     testset = CustomNet_Shrec_Loader(opt.dataroot, 'test', opt)
+    # testset = CustomNet_Rotated_Loader(opt.dataroot, 'test', opt)
     testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shuffle=False, num_workers=opt.nThreads)
 
     # create model, optionally load pre-trained model
@@ -66,10 +74,10 @@ if __name__=='__main__':
         model.detector.load_state_dict(model_state_dict_convert_auto(torch.load(detector_model_path, map_location='cpu'), opt.gpu_ids))
     else:
         print(f'Training from scratch')
+    wandb.watch(model.detector)
 
     best_loss = 1e6
     for epoch in range(501):
-
         epoch_iter = 0
         for i, data in enumerate(trainloader):
             iter_start_time = time.time()
@@ -84,18 +92,29 @@ if __name__=='__main__':
 
             model.optimize(epoch=epoch)
 
-            if i % int(32 / opt.batch_size * 80) == 0 and i > 0:
-                # print/plot errors
-                t = (time.time() - iter_start_time) / opt.batch_size
 
-                errors = model.get_current_errors()
-
-                visualizer.print_current_errors(epoch, epoch_iter, errors, t)
-                visualizer.plot_current_errors(epoch, float(epoch_iter) / dataset_size, opt, errors)
-
-                # print(model.autoencoder.encoder.feature)
-                visuals = model.get_current_visuals()
-                visualizer.display_current_results(visuals, epoch, i)
+        # print/plot errors
+        visuals = model.get_current_visuals()
+        src_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['src_data_vis'][0], visuals['src_data_vis'][1])])
+        dst_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['dst_data_vis'][0], visuals['dst_data_vis'][1])])
+        wandb.log(
+            {
+                "Source point cloud": wandb.Object3D(
+                    {
+                        "type": "lidar/beta",
+                        "points": src_points
+                    }
+                ),
+                
+                "Dest point cloud": wandb.Object3D(
+                    {
+                        "type": "lidar/beta",
+                        "points": dst_points
+                    }
+                )
+            }
+        )
+        # print(visuals['src_data_vis'])
 
         # test network
         # ========== extra info ==============
@@ -136,10 +155,14 @@ if __name__=='__main__':
             model.test_keypoint_on_pc_average /= batch_amount
             model.test_chamfer_pure_average /= batch_amount
             model.test_chamfer_weighted_average /= batch_amount
+            # print(f'Tested network. Loss: {model.test_loss_average.item()}')
+            # pprint(model.get_current_errors())
+            wandb.log(model.get_current_errors())
+
 
             if model.test_loss_average.item() <= best_loss:
                 best_loss = model.test_loss_average.item()
-            print('Tested network. So far best loss: %f' % best_loss)
+            print(f'So far best loss: {best_loss}')
 
             # save models
             # if (model.test_loss_average.item() <= best_loss + 1e-5) and (model.test_chamfer_average.item() < 0.1) and (epoch>40):

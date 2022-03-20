@@ -96,7 +96,9 @@ class ChamferLoss_Brute(nn.Module):
             chamfer_weighted = ((weight_src_dst * src_dst_min_dist).mean() +
                                 (weight_dst_src * dst_src_min_dist).mean()).detach()
 
-        return forward_loss + backward_loss, chamfer_pure, chamfer_weighted
+        # return forward_loss + backward_loss, chamfer_pure, chamfer_weighted
+        return 2.0 * forward_loss, chamfer_pure, chamfer_weighted
+
 
 class ChamferLoss_Brute_1vN(nn.Module):
     def __init__(self, opt):

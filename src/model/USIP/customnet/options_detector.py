@@ -14,11 +14,11 @@ class Options():
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='auto or gpu_ids seperated by comma.')
 
         self.parser.add_argument('--dataset', type=str, default='customnet', help='modelnet / shrec / shapenet')
-        self.parser.add_argument('--dataroot', default='asd', help='path to images & laser point clouds')
+        self.parser.add_argument('--dataroot', default='/cluster/scratch/ameterez/3d_fracture/data/dataset/training_data', help='path to images & laser point clouds')
         self.parser.add_argument('--classes', type=int, default=40, help='ModelNet40 or ModelNet10')
         self.parser.add_argument('--name', type=str, default='train', help='name of the experiment. It decides where to store samples and models')
         self.parser.add_argument('--checkpoints_dir', type=str, default='/cluster/scratch/ameterez/3d_fracture/customnet/checkpoints', help='models are saved here')
-
+        
         self.parser.add_argument('--batch_size', type=int, default=4, help='input batch size')
         self.parser.add_argument('--input_pc_num', type=int, default=1000, help='# of input points')
         self.parser.add_argument('--surface_normal_len', type=int, default=3, help='3 - surface normal, 1 - reflectance')
@@ -53,6 +53,8 @@ class Options():
 
         # pretrained
         self.parser.add_argument('--pretrained', type=str, default=None, help='path to pretrained model .pth')
+        self.parser.add_argument('--nsamples_train', type=int, default=161, help='number of samples')
+        self.parser.add_argument('--nsamples_test', type=int, default=20, help='number of samples')
 
 
         # indoor / outdoor / object configuration
