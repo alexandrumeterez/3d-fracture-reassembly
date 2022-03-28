@@ -8,6 +8,8 @@ import wandb
 sys.path.append('.')
 from pprint import pprint
 from customnet.options_detector import Options
+import argparse
+import os
 opt = Options().parse()  # set CUDA_VISIBLE_DEVICES before import torch
 
 import torch
@@ -52,7 +54,27 @@ def model_state_dict_convert_auto(state_dict, gpu_ids):
         else:
             raise Exception('Error in model_state_dict_convert_auto')
 
-if __name__=='__main__':
+if __name__=='__main__':    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lr", type=float, required=True)
+    parser.add_argument("--checkpoints_dir", type=str, required=True)
+    parser.add_argument("--dataroot", type=str, required=True)
+    args = parser.parse_args()
+    opt.lr = args.lr
+    opt.dataroot = args.dataroot
+    opt.checkpoints_dir = args.checkpoints_dir
+
+    ckpt_dir = os.path.join(opt.checkpoints_dir, f"lr_{opt.lr}")
+    if not os.path.exists(ckpt_dir):
+        os.mkdir(ckpt_dir)
+    opt.checkpoints_dir = ckpt_dir
+
+    print("[INFO] Starting job")
+    print(f"> Learning rate: {opt.lr}")
+    print(f"> Ckpt directory: {opt.checkpoints_dir}")
+    print(f"> Dataset directory: {opt.dataroot}")
+
+
     wandb.init(project="fracture_reassembly", entity="hacking_fractures", config=opt)
     
     trainset = CustomNet_Shrec_Loader(opt.dataroot, 'train', opt)
@@ -74,7 +96,7 @@ if __name__=='__main__':
         model.detector.load_state_dict(model_state_dict_convert_auto(torch.load(detector_model_path, map_location='cpu'), opt.gpu_ids))
     else:
         print(f'Training from scratch')
-    wandb.watch(model.detector)
+    #wandb.watch(model.detector)
 
     best_loss = 1e6
     for epoch in range(501):
@@ -92,29 +114,29 @@ if __name__=='__main__':
 
             model.optimize(epoch=epoch)
 
-
-        # print/plot errors
-        visuals = model.get_current_visuals()
-        src_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['src_data_vis'][0], visuals['src_data_vis'][1])])
-        dst_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['dst_data_vis'][0], visuals['dst_data_vis'][1])])
-        wandb.log(
-            {
-                "Source point cloud": wandb.Object3D(
-                    {
-                        "type": "lidar/beta",
-                        "points": src_points
-                    }
-                ),
-                
-                "Dest point cloud": wandb.Object3D(
-                    {
-                        "type": "lidar/beta",
-                        "points": dst_points
-                    }
-                )
-            }
-        )
-        # print(visuals['src_data_vis'])
+        if epoch % 50 == 0:
+            # print/plot errors
+            visuals = model.get_current_visuals()
+            src_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['src_data_vis'][0], visuals['src_data_vis'][1])])
+            dst_points = np.array([[p[0], p[1], p[2], c[0], c[1], c[2]] for p, c in zip(visuals['dst_data_vis'][0], visuals['dst_data_vis'][1])])
+            wandb.log(
+                {
+                    "Source point cloud": wandb.Object3D(
+                        {
+                            "type": "lidar/beta",
+                            "points": src_points
+                        }
+                    ),
+                    
+                    "Dest point cloud": wandb.Object3D(
+                        {
+                            "type": "lidar/beta",
+                            "points": dst_points
+                        }
+                    )
+                }
+            )
+            # print(visuals['src_data_vis'])
 
         # test network
         # ========== extra info ==============
