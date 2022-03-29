@@ -11,36 +11,17 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_type", type=str, required=True)
 parser.add_argument("--root", type=str, required=True)
-parser.add_argument("--output_folder", type=str, required=True)
 parser.add_argument("--detector_model_path", type=str, required=True)
 args = parser.parse_args()
+print(args)
 is_timing = True
 
-# ============= dataset ===============
-# dataset_type = 'kitti'
-# test_txt_folder = '/ssd/jiaxin/TSF_datasets/kitti-reg-test'
-# numpy_folder = '/ssd/jiaxin/TSF_datasets/kitti/data_odometry_velodyne/numpy'
-# output_folder = '/ssd/jiaxin/keypoints_knn_ball/kitti'
-
-# dataset_type = 'oxford'
-# root_folder = '/ssd/jiaxin/TSF_datasets/oxford'
-# output_folder = '/ssd/jiaxin/keypoints_lambda/oxford'
-
-# dataset_type = 'redwood'
-# npy_folder = '/ssd/jiaxin/TSF_datasets/redwood/numpy_gt_normal'
-# output_folder = '/ssd/jiaxin/keypoints_lambda/redwood'
-
-# dataset_type = '3dmatch_eval'
-# npy_folder = '/ssd/jiaxin/TSF_datasets/3DMatch_eval_npy'
-# output_folder = '/ssd/jiaxin/keypoints_noisy/3dmatch'
-
-# dataset_type = 'modelnet'
-# root = '/ssd/jiaxin/TSF_datasets/modelnet40-test_rotated_numpy'
-# output_folder = '/ssd/jiaxin/keypoints_nosigma/modelnet'
-
-dataset_type = args.dataset_type
+dataset_type = 'customnet'
 root = args.root
-output_folder = args.output_folder
+output_folder = os.path.join(root, 'keypoints')
+
+if not os.path.exists(output_folder):
+    os.mkdir(output_folder)
 
 assert root is not None
 assert output_folder is not None

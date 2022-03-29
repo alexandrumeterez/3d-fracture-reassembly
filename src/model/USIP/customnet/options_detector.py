@@ -60,6 +60,13 @@ class Options():
         # indoor / outdoor / object configuration
         self.parser.add_argument('--scene', type=str, default='object', help='outdoor / indoor / object')
 
+        # extra 
+        self.parser.add_argument('--dataset_type', type=str, default='object', help='outdoor / indoor / object')
+        self.parser.add_argument('--detector_model_path', type=str, default='object', help='outdoor / indoor / object')
+        self.parser.add_argument('--root', type=str, default='object', help='outdoor / indoor / object')
+
+
+
         self.initialized = True
 
     def parse(self):
