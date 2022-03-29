@@ -1,6 +1,19 @@
-import matplotlib
-matplotlib.use('TkAgg')
-is_plot = False
+import sys
+sys.path.append('..')
+
+import os
+import time
+import copy
+import numpy as np
+import math
+import shutil
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset_type", type=str, required=True)
+parser.add_argument("--root", type=str, required=True)
+parser.add_argument("--output_folder", type=str, required=True)
+parser.add_argument("--detector_model_path", type=str, required=True)
+args = parser.parse_args()
 is_timing = True
 
 # ============= dataset ===============
@@ -25,9 +38,9 @@ is_timing = True
 # root = '/ssd/jiaxin/TSF_datasets/modelnet40-test_rotated_numpy'
 # output_folder = '/ssd/jiaxin/keypoints_nosigma/modelnet'
 
-dataset_type = 'custom'
-root = None
-output_folder = None
+dataset_type = args.dataset_type
+root = args.root
+output_folder = args.output_folder
 
 assert root is not None
 assert output_folder is not None
@@ -42,7 +55,7 @@ noise_sigma = 0
 downsample_rate = 1
 # =============== method ================
 method = 'tsf'
-detector_model_path = None
+detector_model_path = args.detector_model_path
 # detector_model_path = '/data/tsf/oxford/checkpoints/save/detector/BALL-16384-512-r2k64-k16/best.pth'
 # detector_model_path = '/data/tsf/scenenn/checkpoints/save/detector/5000-512-k1k32-full-3d/best.pth'
 # detector_model_path = '/data/tsf/match3d/checkpoints/save/detector/10240-512-k1k32-full-lambda100/best.pth'
@@ -50,35 +63,6 @@ detector_model_path = None
 
 assert detector_model_path is not None, "Please specify the model path"
 
-# method = 'iss'
-iss_salient_radius = 2
-iss_non_max_radius = 2
-iss_gamma_21 = 0.975
-iss_gamma_32 = 0.975
-iss_min_neighbors = 5
-threads = 0
-
-# method = 'harris'
-radius = 1
-nms_threshold = 0.001
-threads = 0
-
-# method = 'sift' 
-min_scale = 0.5
-n_octaves = 4
-n_scales_per_octave = 8
-min_contrast = 0.1
-
-# method = 'random'
-
-
-
-import os
-import time
-import copy
-import numpy as np
-import math
-import shutil
 
 if dataset_type == 'kitti':
     import kitti.options_detector
@@ -119,6 +103,9 @@ elif dataset_type == '3dmatch_eval':
 elif dataset_type == 'modelnet':
     import modelnet.options_detector
     opt_detector = modelnet.options_detector.Options().parse()
+elif dataset_type == 'customnet':
+    import customnet.options_detector
+    opt_detector = customnet.options_detector.Options().parse()
 else:
     assert False
 
@@ -135,21 +122,12 @@ import string
 
 from models.keypoint_detector import ModelDetector
 from models.keypoint_descriptor import ModelDescriptor
-from util.visualizer import Visualizer
-from util import vis_tools
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.cm as cm
-
 from evaluation.kitti_test_loader import KittiTestLoader
 from evaluation.oxford_test_loader import OxfordTestLoader
 from evaluation.redwood_loader import RedwoodLoader
 from data.match3d_eval_loader import Match3DEvalLoader
 from data.modelnet_rotated_loader import ModelNet_Rotated_Loader
-
-import PCLKeypoint
-
+from data.customnet_rotated_loader import CustomNet_Rotated_Loader
 
 def random_string_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -250,6 +228,8 @@ if __name__ == '__main__':
         testset = Match3DEvalLoader(npy_folder, opt_detector)
     elif 'modelnet' == dataset_type:
         testset = ModelNet_Rotated_Loader(root, opt_detector)
+    elif 'customnet' == dataset_type:
+        testset = CustomNet_Rotated_Loader(root, opt_detector)
     else:
         assert False
 
@@ -275,7 +255,7 @@ if __name__ == '__main__':
             anc_pc, anc_sn, anc_node, anc_idx = data
         elif 'redwood' == dataset_type or '3dmatch_eval' == dataset_type:
             anc_pc, anc_sn, anc_node, scene_idx, frame_idx = data
-        elif 'modelnet' == dataset_type:
+        elif 'modelnet' == dataset_type or 'customnet' == dataset_type:
             anc_pc, anc_sn, anc_node, anc_idx, anc_type = data
         else:
             assert False
@@ -295,43 +275,7 @@ if __name__ == '__main__':
             anc_keypoints, anc_sigmas = model_detector.run_model(anc_pc_cuda, anc_sn_cuda, anc_node_cuda)
             anc_keypoints_np = anc_keypoints.detach().permute(0, 2, 1).contiguous().cpu().numpy()  # BxMx3
             anc_sigmas_np = anc_sigmas.detach().cpu().numpy()  # BxM
-        elif method == 'iss':
-            anc_keypoints_list = []
-            for b in range(anc_pc.size(0)):
-                frame_pc_np = np.transpose(anc_pc[b].detach().numpy())  # Nx3
-                frame_keypoint_np = PCLKeypoint.keypointIss(frame_pc_np,
-                                                            iss_salient_radius,
-                                                            iss_non_max_radius,
-                                                            iss_gamma_21,
-                                                            iss_gamma_32,
-                                                            iss_min_neighbors,
-                                                            threads)  # Mx3
-                if is_ensure_keypoint_num:
-                    frame_keypoint_np = ensure_keypoint_number(frame_keypoint_np, frame_pc_np, desired_keypoint_num)
-                anc_keypoints_list.append(frame_keypoint_np)
-        elif method == 'harris':
-            anc_keypoints_list = []
-            for b in range(anc_pc.size(0)):
-                frame_pc_np = np.transpose(anc_pc[b].detach().numpy())  # Nx3
-                frame_keypoint_np = PCLKeypoint.keypointHarris(frame_pc_np,
-                                                               radius,
-                                                               nms_threshold,
-                                                               threads)  # Mx3
-                if is_ensure_keypoint_num:
-                    frame_keypoint_np = ensure_keypoint_number(frame_keypoint_np, frame_pc_np, desired_keypoint_num)
-                anc_keypoints_list.append(frame_keypoint_np)
-        elif method == 'sift':
-            anc_keypoints_list = []
-            for b in range(anc_pc.size(0)):
-                frame_pc_np = np.transpose(anc_pc[b].detach().numpy())  # Nx3
-                frame_keypoint_np = PCLKeypoint.keypointSift(frame_pc_np,
-                                                             min_scale,
-                                                             n_octaves,
-                                                             n_scales_per_octave,
-                                                             min_contrast)  # Mx3
-                if is_ensure_keypoint_num:
-                    frame_keypoint_np = ensure_keypoint_number(frame_keypoint_np, frame_pc_np, desired_keypoint_num)
-                anc_keypoints_list.append(frame_keypoint_np)
+        
         elif method == 'random':
             anc_keypoints_list = []
             for b in range(anc_pc.size(0)):
@@ -365,14 +309,6 @@ if __name__ == '__main__':
                 # assure at least one keypoint, by randomly selecting a point
                 if frame_keypoint_np.shape[0] == 0:
                     frame_keypoint_np = frame_pc_np[0:1, :]
-
-            # plot
-            if is_plot:
-                print(frame_keypoint_np.shape)
-                ax = vis_tools.plot_pc(frame_pc_np, size=3)
-                ax = vis_tools.plot_pc(frame_keypoint_np, ax=ax, size=30, color=np.asarray([1, 0, 0]).reshape((1, 3)))
-                plt.show()
-                break
 
             # write to file
             if 'kitti' == dataset_type:

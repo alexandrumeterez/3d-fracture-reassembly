@@ -13,13 +13,15 @@ import torchvision
 import matplotlib.pyplot as plt
 import h5py
 
-def make_dataset_modelnet40(root):
+def make_dataset_modelnet40(root, nsamples_test):
     dataset = []
-    for i in range(6): 
-        folder = ''
-        item = (os.path.join(root, folder, 'brick_part_%d.npy' % i), i, 0)
+    for i in range(nsamples_test): 
+        folder = 'connected_1vN/fragments_1'
+        item = (os.path.join(root, 'test', folder, '%d.npy' % i), i, 0)
         dataset.append(item)
-
+        # folder = 'connected_1vN/fragments_2'
+        # item = (os.path.join(root, 'test', folder, '%d.npy' % i), i, 0)
+        # dataset.append(item)
     return dataset
 
 
@@ -46,7 +48,7 @@ class CustomNet_Rotated_Loader(data.Dataset):
         self.root = root
         self.opt = opt
 
-        self.dataset = make_dataset_modelnet40(self.root)
+        self.dataset = make_dataset_modelnet40(self.root, self.opt.nsamples_test)
 
         # farthest point sample
         self.fathest_sampler = FarthestSampler()
