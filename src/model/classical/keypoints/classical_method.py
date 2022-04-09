@@ -5,6 +5,8 @@ import argparse
 import time
 import scipy
 from scipy.optimize import curve_fit
+np.set_printoptions(suppress=True)
+np.set_printoptions(precision=3)
 
 class Extractor(object):
 	def __init__(self, fragment_path, output_path, keypoint_radius, r_values, n_keypoints):
@@ -50,12 +52,6 @@ class Extractor(object):
 		# Extract keypoints
 		keypoints = point_cloud[keypoint_indices]
 		keypoints_normals = normals[keypoint_indices]
-
-		# Get the nbhd of each keypoint
-		keypoint_neighbourhoods = neighbourhood[keypoint_indices]
-
-
-
 		# For each r value
 		s = len(self.r_vals)
 
@@ -65,20 +61,20 @@ class Extractor(object):
 		output_matrix[:, 3:6] = keypoints_normals
 
 		for r_idx, r in enumerate(self.r_vals):
-			neighbourhood = tree.query_ball_point(point_cloud, r, workers=-1)
+			print(f"Fragment {fragment_path} with radius {r}")
+			r_neighbourhood = tree.query_ball_point(point_cloud, r, workers=-1)
 
 			# For each point p_i in the nbhd of a keypoint p, compute the matrix and the features
 			for p_idx in range(len(keypoints)):
 				# The matrix with all the features, where each row is a phi_i (point in nbhd of p)
-				Phi = np.zeros((len(keypoint_neighbourhoods[p_idx]), 7))
+				Phi = np.zeros((len(r_neighbourhood[keypoint_indices[p_idx]]), 7))
 				
 				p = keypoints[p_idx]
-				p_neighbourhood = np.asarray(keypoint_neighbourhoods[p_idx])
-				
+				p_neighbourhood = np.asarray(r_neighbourhood[keypoint_indices[p_idx]])
 				# Compute C_p
 				p_bar = np.mean(point_cloud[p_neighbourhood], axis=1)
 				P = point_cloud[p_neighbourhood].T
-				C_p = (P - p_bar) @ (P - p_bar).T / len(p_neighbourhood)
+				C_p = (P - p_bar) @ (P - p_bar).T
 
 				# Do SVD on C_p
 				U, S, Vt = np.linalg.svd(C_p)
@@ -91,12 +87,12 @@ class Extractor(object):
 				Phi[:, 3] = delta1
 				Phi[:, 4] = delta2
 				Phi[:, 5] = delta3
-
 				# Compute cosine for each keypoint (vectorized, p_i are the points in the nbhd of p)
+				# print(point_cloud[p_neighbourhood].shape, p.shape)
 				p_pi = point_cloud[p_neighbourhood] - p
 				n_pi = normals[p_neighbourhood]
-				n_p = normals[p_idx]
-				for i in range(len(p_neighbourhood)):
+				n_p = normals[keypoint_indices[p_idx]]
+				for i in range(len(p_neighbourhood)):					
 					cos_alpha_i = np.dot(p_pi[i], n_pi[i]) / np.linalg.norm(p_pi)
 					cos_beta_i = np.dot(p_pi[i], n_p) / np.linalg.norm(p_pi)
 					cos_gamma_i = np.dot(n_pi[i], n_p)
@@ -104,7 +100,6 @@ class Extractor(object):
 					Phi[i, 0] = cos_alpha_i
 					Phi[i, 1] = cos_beta_i
 					Phi[i, 2] = cos_gamma_i
-				
 				# Compute H
 				xdata = point_cloud[p_neighbourhood][:, :2]
 				ydata = point_cloud[p_neighbourhood][:, 2]
@@ -116,7 +111,7 @@ class Extractor(object):
 					y = X[:, 1]
 					return a0 * (x ** 2) + a1 * (y ** 2) + a2 * (x * y) + a3 * x + a4 * y + a5
 
-				popt, _ = curve_fit(objective, xdata, ydata)
+				popt, _ = curve_fit(objective, xdata, ydata, p0=[0,0,0,0,0,0])
 				a0, a1, a2, a3, a4, a5 = popt
 
 				# (x, y, f(x, y))
@@ -155,7 +150,9 @@ class Extractor(object):
 				centered_Phi = Phi - Phi_bar
 				C_r = centered_Phi.T @ centered_Phi / (len(p_neighbourhood))
 				output_matrix[p_idx, 6 + r_idx * 49: 6 + (r_idx + 1) * 49] = C_r.ravel()
-			
+		# print(output_matrix)
+		output_matrix[:, 6:] = np.log(output_matrix[:, 6:])
+		
 		np.save(self.output_path, output_matrix)
 
 if __name__ == '__main__':
