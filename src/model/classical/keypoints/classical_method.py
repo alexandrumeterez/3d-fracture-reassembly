@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 from tqdm import tqdm
 from plotly.subplots import make_subplots 
 from scipy.optimize import curve_fit
+from multiprocessing import Pool
+
 np.set_printoptions(suppress=True)
 np.set_printoptions(precision=3)
 
@@ -69,7 +71,7 @@ class Extractor(object):
 		output_matrix = np.zeros((len(keypoint_indices), 3 + 3 + 49 * len(self.r_vals)))
 
 		# For each keypoint
-		for n_keypoint, keypoint_index in enumerate(tqdm(keypoint_indices)):
+		for n_keypoint, keypoint_index in enumerate(keypoint_indices):
 			# Get keypoint and normal of the keypoint
 			keypoint = point_cloud[keypoint_index]
 			keypoint_normal = normals[keypoint_index]
@@ -158,6 +160,9 @@ class Extractor(object):
 				output_matrix[n_keypoint, 6 + r_idx * 49: 6 + (r_idx + 1) * 49] = log_C_r.ravel()
 
 		np.save(self.output_path, output_matrix)
+def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints):
+	extractor = Extractor(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints)
+	extractor.extract()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -170,6 +175,8 @@ if __name__ == '__main__':
 	fragments = os.listdir(args.dataset_dir)
 	fragments = [x for x in fragments if x.endswith(".npy")]
 
+	f_args = []
+
 	for fragment in fragments:
 		print(f"Fragment: {fragment}")
 		fragment_path = os.path.join(args.dataset_dir, fragment)
@@ -178,5 +185,6 @@ if __name__ == '__main__':
 			os.mkdir(keypoints_dir)
 
 		output_path = os.path.join(keypoints_dir, fragment)
-		extractor = Extractor(fragment_path, output_path, args.keypoint_radius, args.r_vals, args.n_keypoints)
-		extractor.extract()
+		f_args.append((fragment_path, output_path, args.keypoint_radius, args.r_vals, args.n_keypoints))
+	with Pool(processes=8) as pool:
+		pool.starmap(f, f_args)
