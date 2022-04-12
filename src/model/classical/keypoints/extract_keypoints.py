@@ -40,7 +40,7 @@ class SDExtractor(object):
 			SD[i] = self.compute_SD_point(neighbourhood, point_cloud, normals, i)
 		return SD
 
-	def extract_keypoints(self, npoints_thresh, nkeypoints, r1, r2):
+	def extract_keypoints(self, nkeypoints, r):
 		for shard in range(0, self.n_shards):
 			start = time.time()
 			fragment_path = os.path.join(self.path, self.files[shard])
@@ -49,11 +49,6 @@ class SDExtractor(object):
 			fragment = np.load(fragment_path)
 			point_cloud = fragment[:, :3]
 			normals = fragment[:, 3:]
-			
-			if len(point_cloud) > npoints_thresh:
-				r = r1
-			else:
-				r = r2
 			
 			SD = self.get_SD_for_point_cloud(point_cloud, normals, r=r)
 			indices_to_keep = np.argsort(np.abs(SD))[-nkeypoints:]
@@ -74,12 +69,11 @@ class SDExtractor(object):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--object_dir', type=str, required=True)
-	parser.add_argument('--npoints_thresh', default=10000, type=int)
 	parser.add_argument('--nkeypoints', default=512, type=int)
-	parser.add_argument('--r1', default=0.1, type=float)
-	parser.add_argument('--r2', default=0.09, type=float)
+	parser.add_argument('--r', default=0.1, type=float)
+
 
 	args = parser.parse_args()
 
 	extractor = SDExtractor(args.object_dir)
-	extractor.extract_keypoints(args.npoints_thresh, args.nkeypoints, args.r1, args.r2)
+	extractor.extract_keypoints(args.nkeypoints, args.r)
