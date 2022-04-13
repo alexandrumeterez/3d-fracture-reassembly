@@ -46,6 +46,13 @@ for o in os.listdir(input_path):
             obj.name = o[:-4]
             obj.data.name = o[:-4]
             
+            #remesh
+            print("Remesh Object "+obj.name)
+            bpy.ops.object.modifier_add(type='REMESH')
+            obj.modifiers['Remesh'].mode = 'SMOOTH'
+            obj.modifiers['Remesh'].octree_depth = 7
+            bpy.ops.object.modifier_apply(modifier='Remesh',apply_as='DATA')
+            
             #subdivide to at somewhere near 42k points
             if(len(obj.data.vertices) < 42000):
                 me = obj.data
