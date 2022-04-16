@@ -66,7 +66,7 @@ def collect_pointclouds(dir, input_root, output_root):
     if scale < 0.01:
         assert f"SCALE TOO SMALL -- Folder: {dir}"
     print(f"Maximal Scale: {scale}")
-    _downsample_and_save(dir, pc_dict, output_root)
+    _downsample_and_save(dir, pc_dict, output_root, scale)
 
     # Save neighbor information to csv, super slow for large point clouds
     # neighbors = generate_neighbors(os.path.join(output_root, dir))
