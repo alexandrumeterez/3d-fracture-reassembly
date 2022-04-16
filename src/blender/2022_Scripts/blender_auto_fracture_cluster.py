@@ -31,8 +31,7 @@ Note that Blender will freeze during execution. You can see what it's doing in t
 
 # variables
 shard_count = 8
-seed_count = 4
-
+seed_count = 1
 
 bpy.ops.object.select_all(action='SELECT') 
 bpy.ops.object.delete()   
@@ -40,60 +39,64 @@ bpy.ops.object.delete()
 # delete scene and add all objects from /script_input
 input_path = os.path.abspath("script-input")
 for o in os.listdir(input_path):
-    bpy.ops.import_scene.obj(filepath=os.path.join(input_path, o))
+    bpy.ops.import_mesh.stl(filepath=os.path.join(input_path, o))
     # replace name of obj with filename
-    for obj in bpy.context.selected_objects:
-            obj.name = o[:-4]
-            obj.data.name = o[:-4]
-            
-            #remesh
-            print("Remesh Object "+obj.name)
-            bpy.ops.object.modifier_add(type='REMESH')
-            obj.modifiers['Remesh'].mode = 'SMOOTH'
-            obj.modifiers['Remesh'].octree_depth = 7
-            bpy.ops.object.modifier_apply(modifier='Remesh',apply_as='DATA')
-            
-            #subdivide to at somewhere near 42k points
-            if(len(obj.data.vertices) < 42000):
-                me = obj.data
-                # New bmesh
-                bm = bmesh.new()
-                # load the mesh
-                bm.from_mesh(me)
+    obj = bpy.context.active_object
+    obj.name = o[:-4]
+    obj.data.name = o[:-4]
+    
+    #remesh
+    print("Remesh Object "+obj.name)
+    bpy.ops.object.modifier_add(type='REMESH')
+    obj.modifiers['Remesh'].mode = 'SMOOTH'
+    obj.modifiers['Remesh'].octree_depth = 8 # too low value can cause non watertight
+    bpy.ops.object.modifier_apply(modifier='Remesh',apply_as='DATA')
+    
+    ## Edit Mesh
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_non_manifold(extend=False)
+    #dissolve faces
+    bpy.ops.mesh.dissolve_verts()
+    bpy.ops.object.mode_set(mode='OBJECT')
 
-                # subdivide
-                cut = int(math.sqrt(42000/len(obj.data.polygons)))+1
-                bmesh.ops.subdivide_edges(bm,
-                                          edges=bm.edges,
-                                          cuts=cut,
-                                          use_grid_fill=True,
-                                          )
+    #subdivide to at somewhere near 42k points
+    if(len(obj.data.vertices) < 42000):
+        me = obj.data
+        # New bmesh
+        bm = bmesh.new()
+        # load the mesh
+        bm.from_mesh(me)
 
-                # Write back to the mesh
-                bm.to_mesh(me)
-                me.update()
-            bpy.ops.object.select_all(action='DESELECT')   
-            
+        # subdivide
+        cut = int(math.sqrt(42000/len(obj.data.polygons)))+1
+        bmesh.ops.subdivide_edges(bm,
+                                    edges=bm.edges,
+                                    cuts=cut,
+                                    use_grid_fill=True,
+                                    )
+        # Write back to the mesh
+        bm.to_mesh(me)
+        me.update()
+
     print("Imported Object: ", o)
 
-# fracture objects
-object_list = list(bpyscene.objects)
-for object in object_list:
-    if object.type == 'MESH':
-        current_mesh = object.name
+    obj = obj
+    # fracture objects
+    if obj.type == 'MESH':
+        current_mesh = obj.name
         print("Processing ", current_mesh)
-        bpy.context.scene.objects.active = object
-        object.select = True
+        bpy.context.scene.objects.active = obj
+        obj.select = True
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
-        object.location.x = 0
-        object.location.y = 0
-        object.location.z = 0
+        obj.location.x = 0
+        obj.location.y = 0
+        obj.location.z = 0
     else:
         continue
     
     for seed in range(seed_count):
-        bpy.context.scene.objects.active = object
-        object.select = True
+        bpy.context.scene.objects.active = obj
+        obj.select = True
         ob = bpy.context.active_object
         
         bpy.ops.object.modifier_add(type='FRACTURE')
@@ -109,18 +112,11 @@ for object in object_list:
         bpy.ops.object.fracture_refresh(reset=True)
         bpy.ops.object.rigidbody_convert_to_objects()
 
-
-        folder = os.path.abspath("script-output")
-        name = current_mesh + "_" + str(shard_count) + "_seed_" + str(seed)
-        path = os.path.join(bpy.app.binary_path, folder, name)
-        os.makedirs(path, exist_ok=True)
-
-
         bpy.ops.object.select_all(action='DESELECT')    
         scene = bpy.context.scene
         
         for ob in list(scene.objects):
-            if ob in object_list or ob.type != 'MESH':
+            if ob == obj or ob.type != 'MESH':
                 continue
             scene.objects.active = ob
             ob.select = True
@@ -131,6 +127,17 @@ for object in object_list:
         scene = bpy.context.scene
         
         frag_num = 0
+        folder = os.path.abspath("script-output")
+        if len(scene.objects) < shard_count + 1:
+            print("Not enough shards, drop object:" + current_mesh)
+            with open(os.path.join(folder,"skipped.txt"), "a") as f:
+                f.write(current_mesh + " #Fragments: " + str(len(scene.objects)-1))
+            break
+
+        name = current_mesh + "_" + str(shard_count) + "_seed_" + str(seed)
+        path = os.path.join(folder, name)
+        os.makedirs(path, exist_ok=True)
+
         for ob in list(scene.objects):
             scene.objects.active = ob
             ob.select = True
@@ -148,5 +155,7 @@ for object in object_list:
                 else:
                     print("Discard Fragment"+ob.name)
                 bpy.ops.object.delete()
+    bpy.ops.object.select_all(action='SELECT') 
+    bpy.ops.object.delete() 
 
 print("DONE")
