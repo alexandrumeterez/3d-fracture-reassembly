@@ -23,10 +23,10 @@ Loops over all subfolders of root/input_folder and outputs to same folder in roo
 Fragments with <1000 points after downsampling won't get downsampled
 """
 
-root = "PC_Artificial/default_cube"
+root = "PC_Thingi10k"
 input_folder = f"{root}/ply"  # should contain pointclouds in .ply format
-output_folder = f"{root}/npy" # will be generated for output
-sample_size = 0.05
+output_folder = f"{root}/npy"  # will be generated for output
+sample_size = 0.005
 
 
 def convert_pointclouds(input_root, output_root):
@@ -84,7 +84,7 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
 
     fig = go.Figure()
     for file, pcloud in pc_dict.items():
-        pcloud.scale(2 / scale, [0, 0, 0])
+        pcloud.scale(2/scale, [0,0,0])
         pc_d = pcloud.voxel_down_sample(voxel_size=sample_size)
 
         points = np.asarray(pc_d.points)
@@ -108,11 +108,16 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
                 mode="markers",
                 marker=dict(size=2),
             )
-        )
+        ) 
 
         out_file = os.path.join(output_root, folder, file)
         # print(f"Saving {out_file}: {pc_d}")
         np.save(out_file, data)
+    
+    fig.update_layout(scene = dict(
+        xaxis = dict(nticks=5, range=[-1.5,1.5],),
+                     yaxis = dict(nticks=5, range=[-1.5,1.5],),
+                     zaxis = dict(nticks=5, range=[-1.5,1.5],),))
     fig.write_html(os.path.join(output_root, folder, "scatter_plot.html"))
 
 

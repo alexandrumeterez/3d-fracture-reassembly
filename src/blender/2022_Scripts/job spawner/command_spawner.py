@@ -13,7 +13,11 @@ input_dir = os.path.abspath("script-input")
 
 
 def spawn_jobs(shard_count, seed_count):
-    for file in os.listdir(input_dir):
+    i = 0
+    files = os.listdir(input_dir)
+    for file in files[:2]:
+        print(f"Spawning Process {i} of {len(files)}")
+        i+=1
         subprocess.run(
             [
                 "bsub",
@@ -36,10 +40,10 @@ if __name__ == "__main__":
         description="Spawn jobs for blender_auto_fracture_cluster.py"
     )
     parser.add_argument(
-        "--shard_count", type=int, help="Number of shards to split the model into"
+        "--shard_count", type=int, help="Number of shards to split the model into", required=True
     )
     parser.add_argument(
-        "--seed_count", type=int, help="Number of seeds to use for each shard"
+        "--seed_count", type=int, help="Number of seeds to use for each shard", required=True
     )
     args = parser.parse_args()
     spawn_jobs(args.shard_count, args.seed_count)
