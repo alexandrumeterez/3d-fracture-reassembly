@@ -75,7 +75,8 @@ class Extractor(object):
 			neighbourhoods[r] = tree.query_ball_point(point_cloud, r, workers=-1)
 		
 		# Output
-		output_matrix = np.zeros((len(keypoint_indices), 3 + 3 + 49 * len(self.r_vals)))
+		n_features_used = 3 # change this if you uncomment any of the rest
+		output_matrix = np.zeros((len(keypoint_indices), 3 + 3 + n_features_used * n_features_used * len(self.r_vals)))
 
 		# For each keypoint
 		for n_keypoint, keypoint_index in enumerate(tqdm(keypoint_indices)):
@@ -116,45 +117,45 @@ class Extractor(object):
 					phi_i.append(cos_beta)
 					phi_i.append(cos_gamma)
 
-					# Compute C_p_i and delta1, delta2, delta3
-					C_p_i = np.cov(point_cloud[p_i_neighbourhood].T) * len(p_i_neighbourhood)
-					U, S, Vt = np.linalg.svd(C_p_i)
-					lambda1, lambda2, lambda3 = S
-					delta1 = (lambda1 - lambda2) / lambda1
-					delta2 = (lambda2 - lambda3) / lambda1
-					delta3 = lambda3 / lambda1
-					phi_i.append(delta1)
-					phi_i.append(delta2)
-					phi_i.append(delta3)
+					# # Compute C_p_i and delta1, delta2, delta3
+					# C_p_i = np.cov(point_cloud[p_i_neighbourhood].T) * len(p_i_neighbourhood)
+					# U, S, Vt = np.linalg.svd(C_p_i)
+					# lambda1, lambda2, lambda3 = S
+					# delta1 = (lambda1 - lambda2) / lambda1
+					# delta2 = (lambda2 - lambda3) / lambda1
+					# delta3 = lambda3 / lambda1
+					# phi_i.append(delta1)
+					# phi_i.append(delta2)
+					# phi_i.append(delta3)
 
-					# Compute H
-					p_i_neighbourhood_points = point_cloud[p_i_neighbourhood]
-					xdata = p_i_neighbourhood_points[:, :2]
-					ydata = p_i_neighbourhood_points[:, 2]
-					popt, _ = curve_fit(objective, xdata, ydata, p0=[0,0,0,0,0,0])
-					a0, a1, a2, a3, a4, a5 = popt
-					r_x = np.zeros((3))
-					r_xy = np.zeros((3))
-					r_xx = np.zeros((3))
-					r_y = np.zeros((3))
-					r_yy = np.zeros((3))
-					r_x[2] = 2 * a0 * p_i_point[0] + a2 * p_i_point[1] + a3
-					r_xx[2] = 2 * a0
-					r_xy[2] = a2
-					r_y[2] = 2 * a1 * p_i_point[1] + a2 * p_i_point[0] + a4
-					r_yy[2] = 2 * a1
-					r_x[0] = 1
-					r_y[1] = 1
-					E = np.dot(r_x, r_x)
-					F = np.dot(r_x, r_y)
-					G = np.dot(r_y, r_y)
-					L = np.dot(r_xx, p_i_normal)
-					M = np.dot(r_xy, p_i_normal)
-					N = np.dot(r_yy, p_i_normal)
-					H = (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
+					# # Compute H
+					# p_i_neighbourhood_points = point_cloud[p_i_neighbourhood]
+					# xdata = p_i_neighbourhood_points[:, :2]
+					# ydata = p_i_neighbourhood_points[:, 2]
+					# popt, _ = curve_fit(objective, xdata, ydata, p0=[0,0,0,0,0,0])
+					# a0, a1, a2, a3, a4, a5 = popt
+					# r_x = np.zeros((3))
+					# r_xy = np.zeros((3))
+					# r_xx = np.zeros((3))
+					# r_y = np.zeros((3))
+					# r_yy = np.zeros((3))
+					# r_x[2] = 2 * a0 * p_i_point[0] + a2 * p_i_point[1] + a3
+					# r_xx[2] = 2 * a0
+					# r_xy[2] = a2
+					# r_y[2] = 2 * a1 * p_i_point[1] + a2 * p_i_point[0] + a4
+					# r_yy[2] = 2 * a1
+					# r_x[0] = 1
+					# r_y[1] = 1
+					# E = np.dot(r_x, r_x)
+					# F = np.dot(r_x, r_y)
+					# G = np.dot(r_y, r_y)
+					# L = np.dot(r_xx, p_i_normal)
+					# M = np.dot(r_xy, p_i_normal)
+					# N = np.dot(r_yy, p_i_normal)
+					# H = (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
 
-					# Set the value
-					phi_i.append(H)
+					# # Set the value
+					# phi_i.append(H)
 
 					Phi.append(phi_i)
 				Phi = np.array(Phi)
@@ -165,7 +166,7 @@ class Extractor(object):
 				S = np.log(S)
 				log_C_r = R @ np.diag(S) @ R.T
 				keypoint_cov_mats.append(log_C_r)
-				output_matrix[n_keypoint, 6 + r_idx * 49: 6 + (r_idx + 1) * 49] = log_C_r.ravel()
+				output_matrix[n_keypoint, 6 + r_idx * n_features_used * n_features_used: 6 + (r_idx + 1) * n_features_used * n_features_used] = log_C_r.ravel()
 			self.cov_mats.append(keypoint_cov_mats)
 		np.save(self.output_path, output_matrix)
 def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints):
@@ -301,7 +302,7 @@ if __name__ == '__main__':
 
 		r = args.keypoint_radius
 		scales = args.r_vals
-		n_points = args.n_keypoints
+		n_points = args.n_keypointso
 		extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points)
 		extractor1.extract()
 		extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points)
