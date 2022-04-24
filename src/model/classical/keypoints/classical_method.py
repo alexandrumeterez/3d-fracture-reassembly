@@ -1,3 +1,4 @@
+from turtle import color
 import numpy as np
 from scipy import spatial
 import os
@@ -24,7 +25,7 @@ def objective(X, a0, a1, a2, a3, a4, a5):
 
 class Extractor(object):
     def __init__(
-        self, fragment_path, output_path, keypoint_radius, r_values, n_keypoints
+        self, fragment_path, output_path, keypoint_radius, r_values, n_keypoints, plot_features=False
     ):
         self.fragment_path = fragment_path
         self.output_path = output_path
@@ -34,6 +35,7 @@ class Extractor(object):
         self.cov_mats = []
         self.point_cloud = None
         self.keypoints = None
+        self.plot_features = plot_features
 
     def compute_SD_point(self, neighbourhood, points, normals, p_idx):
         p_i = points[p_idx]
@@ -58,7 +60,7 @@ class Extractor(object):
         x = p_i_neighbourhood_points[:, 0][:, None]
         y = p_i_neighbourhood_points[:, 1][:, None]
         z = p_i_neighbourhood_points[:, 2][:, None]
-        X = np.concatenate([x**2, y**2, x*y, x, y, np.ones_like(x)], axis=1)
+        X = np.concatenate([x ** 2, y ** 2, x * y, x, y, np.ones_like(x)], axis=1)
         w = np.linalg.lstsq(X, z, rcond=None)[0]
         a0, a1, a2, a3, a4, a5 = w
         # xdata = p_i_neighbourhood_points[:, :2]
@@ -83,7 +85,10 @@ class Extractor(object):
         L = np.dot(r_xx, p_i_normal)
         M = np.dot(r_xy, p_i_normal)
         N = np.dot(r_yy, p_i_normal)
-        return (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
+        H = (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
+        # if(np.linalg.norm(p_i_point- np.array([-0.2411, 0.2888, -0.1318])) < 0.001):
+        #     print(H)
+        return H
 
     def calculat_deltas(self, p_i_neighbourhood):
         C_p_i = np.cov(self.point_cloud[p_i_neighbourhood].T) * len(p_i_neighbourhood)
@@ -109,7 +114,8 @@ class Extractor(object):
         # Extract keypoints
         nbhd = tree.query_ball_point(point_cloud, keypoint_radius, workers=-1)
         SD = self.get_SD_for_point_cloud(point_cloud, normals, nbhd)
-
+        print(f"zeros: {np.sum(np.isclose(SD, 0))}, out of {len(SD)}")
+        SD[SD == 0] = 1e-10
         # Fix normals
         normals = normals * np.sign(SD[:, None])
 
@@ -123,7 +129,7 @@ class Extractor(object):
         print("Building neighbourhoods, H and deltas")
         for r in self.r_vals:
             neighbourhoods[r] = tree.query_ball_point(point_cloud, r, workers=-1)
-        
+
             # save H and deltas for ALL points
             for p_i in tqdm(range(point_cloud.shape[0])):
                 H_lut[self.r_vals.index(r), p_i] = self.calculate_H(
@@ -134,7 +140,67 @@ class Extractor(object):
                 deltas_lut[self.r_vals.index(r), p_i, :] = self.calculat_deltas(
                     neighbourhoods[r][p_i]
                 )
-        
+        if self.plot_features:
+            # scatter plot H values
+            fig = make_subplots(
+                rows=2,
+                cols=2,
+                specs=[
+                    [{"type": "scene"}, {"type": "scene"}],
+                    [{"type": "scene"}, {"type": "scene"}],
+                ],
+                vertical_spacing=0.01,
+                horizontal_spacing=0.01,
+                subplot_titles=("H Value", "Delta1 Value", "Delta2 Value", "Delta3 Value"),
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(
+                        size=2, color=np.log(np.abs(H_lut[0, :]) + 0.01), showscale=True, colorscale='thermal'
+                    ),
+                ),
+                row=1,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 0])+0.00001), showscale=True, colorscale='thermal'),
+                ),
+                row=1,
+                col=2,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 1])+0.00001), showscale=True, colorscale='thermal'),
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 2])+0.00001), showscale=True, colorscale='thermal'),
+                ),
+                row=2,
+                col=2,
+            )
+
+            fig.show()
 
         # Output
         n_features_used = 7  # change this if you uncomment any of the rest
@@ -228,7 +294,9 @@ class Extractor(object):
                     H = H_lut[r_idx, p_i]
 
                     # Set the value
-                    phi_i = np.array([cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3, H])
+                    phi_i = np.array(
+                        [cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3, H]
+                    )
 
                     Phi[:, idx] = phi_i
                 C_r = np.cov(Phi)
@@ -350,10 +418,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default=2, type=int)
     parser.add_argument("--dataset_dir", default="135216_8_seed_0", type=str)
-    parser.add_argument("--keypoint_radius", type=float, default=0.008)
+    parser.add_argument("--keypoint_radius", type=float, default=0.01)
     parser.add_argument("--n_keypoints", type=int, default=1024)
-    parser.add_argument("--r_vals", nargs="+", default=[0.05, 0.075, 0.1], type=float)
-    parser.add_argument("--threshold", type=float, default=0.8)
+    parser.add_argument("--r_vals", nargs="+", default=[0.05], type=float)
+    parser.add_argument("--threshold", type=float, default=0.05)
     parser.add_argument(
         "--fragment1", type=str, default="135216_8_seed_0/135216_shard_1.npy"
     )
@@ -393,9 +461,9 @@ if __name__ == "__main__":
         r = args.keypoint_radius
         scales = args.r_vals
         n_points = args.n_keypoints
-        extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points)
+        extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points, plot_features=True)
         extractor1.extract()
-        extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points)
+        extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points, plot_features=False)
         extractor2.extract()
 
         visualize_matches(extractor2, extractor1, n_points, len(scales), args.threshold)
