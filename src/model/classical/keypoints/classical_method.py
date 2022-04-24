@@ -327,17 +327,23 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
     x_lines = []
     y_lines = []
     z_lines = []
-    c = -1
+    c = [0, 0, -0.5]
     colors1 = ["blue" for _ in range(n_points)]
     colors2 = ["blue" for _ in range(n_points)]
     min_d = 99
+    dist = []
+    for s in range(n_scales):
+        cov_m1 = np.array(extractor1.cov_mats)[:,s].reshape((n_points, 49))
+        cov_m2 = np.array(extractor2.cov_mats)[:,s].reshape((n_points, 49))
+        dist.append(spatial.distance.cdist(cov_m1, cov_m2, "euclidean"))
     for i in range(n_points):
         for j in range(n_points):
             d = 0.0
             for s in range(n_scales):
-                d += np.linalg.norm(
-                    extractor1.cov_mats[i][s] - extractor2.cov_mats[j][s], ord="fro"
-                )
+                # d += np.linalg.norm(
+                #     extractor1.cov_mats[i][s] - extractor2.cov_mats[j][s], ord="fro"
+                # )
+                d += dist[s][i,j]
             d /= n_scales
             if d < min_d:
                 min_d = d
@@ -347,15 +353,15 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
                 colors2[j] = "green"
 
                 x_lines.append(extractor1.keypoints[i][0])
-                x_lines.append(extractor2.keypoints[j][0] + c)
+                x_lines.append(extractor2.keypoints[j][0] + c[0])
                 x_lines.append(None)
 
                 y_lines.append(extractor1.keypoints[i][1])
-                y_lines.append(extractor2.keypoints[j][1])
+                y_lines.append(extractor2.keypoints[j][1] + c[1])
                 y_lines.append(None)
 
                 z_lines.append(extractor1.keypoints[i][2])
-                z_lines.append(extractor2.keypoints[j][2])
+                z_lines.append(extractor2.keypoints[j][2] + c[2])
                 z_lines.append(None)
 
     fig = go.Figure()
@@ -380,8 +386,12 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
         )
     )
 
-    extractor2.keypoints[:, 0] += c
-    extractor2.point_cloud[:, 0] += c
+    extractor2.keypoints[:, 0] += c[0]
+    extractor2.point_cloud[:, 0] += c[0]
+    extractor2.keypoints[:, 1] += c[1]
+    extractor2.point_cloud[:, 1] += c[1]
+    extractor2.keypoints[:, 2] += c[2]
+    extractor2.point_cloud[:, 2] += c[2]
     fig.add_trace(
         go.Scatter3d(
             x=extractor2.point_cloud[:, 0],
@@ -418,15 +428,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default=2, type=int)
     parser.add_argument("--dataset_dir", default="135216_8_seed_0", type=str)
-    parser.add_argument("--keypoint_radius", type=float, default=0.01)
+    parser.add_argument("--keypoint_radius", type=float, default=0.02)
     parser.add_argument("--n_keypoints", type=int, default=1024)
-    parser.add_argument("--r_vals", nargs="+", default=[0.05], type=float)
-    parser.add_argument("--threshold", type=float, default=0.05)
+    parser.add_argument("--r_vals", nargs="+", default=[0.05, 0.075, 0.1], type=float)
+    parser.add_argument("--threshold", type=float, default=1.5)
     parser.add_argument(
-        "--fragment1", type=str, default="135216_8_seed_0/135216_shard_1.npy"
+        "--fragment1", type=str, default="Venus/venus_part01.npy"
     )
     parser.add_argument(
-        "--fragment2", type=str, default="135216_8_seed_0/135216_shard_2.npy"
+        "--fragment2", type=str, default="Venus/venus_part02.npy"
     )
     args = parser.parse_args()
 
@@ -461,7 +471,7 @@ if __name__ == "__main__":
         r = args.keypoint_radius
         scales = args.r_vals
         n_points = args.n_keypoints
-        extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points, plot_features=True)
+        extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points, plot_features=False)
         extractor1.extract()
         extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points, plot_features=False)
         extractor2.extract()
