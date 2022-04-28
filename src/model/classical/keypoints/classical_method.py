@@ -25,7 +25,13 @@ def objective(X, a0, a1, a2, a3, a4, a5):
 
 class Extractor(object):
     def __init__(
-        self, fragment_path, output_path, keypoint_radius, r_values, n_keypoints, plot_features=False
+        self,
+        fragment_path,
+        output_path,
+        keypoint_radius,
+        r_values,
+        n_keypoints,
+        plot_features=False,
     ):
         self.fragment_path = fragment_path
         self.output_path = output_path
@@ -104,8 +110,6 @@ class Extractor(object):
         point_cloud = fragment[:, :3]
         self.point_cloud = point_cloud
         normals = fragment[:, 3:]
-        point_cloud = np.asarray(point_cloud, order="F")
-        normals = np.asarray(normals, order="F")
 
         # Get all radius r neighbourhoods for each r
         keypoint_radius = self.keypoint_radius
@@ -120,7 +124,8 @@ class Extractor(object):
         normals = normals * np.sign(SD[:, None])
 
         # Extract keypoint indices
-        keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints :]
+        keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints-2048:-2048]
+        # keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints :]
         self.keypoints = self.point_cloud[keypoint_indices]
         # Compute the neighbourhoods in all r vals
         neighbourhoods = {}
@@ -141,66 +146,7 @@ class Extractor(object):
                     neighbourhoods[r][p_i]
                 )
         if self.plot_features:
-            # scatter plot H values
-            fig = make_subplots(
-                rows=2,
-                cols=2,
-                specs=[
-                    [{"type": "scene"}, {"type": "scene"}],
-                    [{"type": "scene"}, {"type": "scene"}],
-                ],
-                vertical_spacing=0.01,
-                horizontal_spacing=0.01,
-                subplot_titles=("H Value", "Delta1 Value", "Delta2 Value", "Delta3 Value"),
-            )
-            fig.add_trace(
-                go.Scatter3d(
-                    x=self.point_cloud[:, 0],
-                    y=self.point_cloud[:, 1],
-                    z=self.point_cloud[:, 2],
-                    mode="markers",
-                    marker=dict(
-                        size=2, color=np.log(np.abs(H_lut[0, :]) + 0.01), showscale=True, colorscale='thermal'
-                    ),
-                ),
-                row=1,
-                col=1,
-            )
-            fig.add_trace(
-                go.Scatter3d(
-                    x=self.point_cloud[:, 0],
-                    y=self.point_cloud[:, 1],
-                    z=self.point_cloud[:, 2],
-                    mode="markers",
-                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 0])+0.00001), showscale=True, colorscale='thermal'),
-                ),
-                row=1,
-                col=2,
-            )
-            fig.add_trace(
-                go.Scatter3d(
-                    x=self.point_cloud[:, 0],
-                    y=self.point_cloud[:, 1],
-                    z=self.point_cloud[:, 2],
-                    mode="markers",
-                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 1])+0.00001), showscale=True, colorscale='thermal'),
-                ),
-                row=2,
-                col=1,
-            )
-            fig.add_trace(
-                go.Scatter3d(
-                    x=self.point_cloud[:, 0],
-                    y=self.point_cloud[:, 1],
-                    z=self.point_cloud[:, 2],
-                    mode="markers",
-                    marker=dict(size=2, color=np.log(np.abs(deltas_lut[0, :, 2])+0.00001), showscale=True, colorscale='thermal'),
-                ),
-                row=2,
-                col=2,
-            )
-
-            fig.show()
+            self.plot_features(self, H_lut, deltas_lut)
 
         # Output
         n_features_used = 7  # change this if you uncomment any of the rest
@@ -211,6 +157,7 @@ class Extractor(object):
             )
         )
 
+        print("Extracting features")
         # For each keypoint
         for n_keypoint, keypoint_index in enumerate(tqdm(keypoint_indices)):
             # Get keypoint and normal of the keypoint
@@ -249,54 +196,16 @@ class Extractor(object):
                         p_p_i_vector
                     )
                     cos_gamma = np.dot(p_i_normal, keypoint_normal)
-                    phi_i = np.array([cos_alpha, cos_beta, cos_gamma])
+                    # phi_i = np.array([cos_alpha, cos_beta, cos_gamma])
 
                     # Compute C_p_i and delta1, delta2, delta3
-                    # C_p_i = np.cov(point_cloud[p_i_neighbourhood].T) * len(p_i_neighbourhood)
-                    # U, S, Vt = np.linalg.svd(C_p_i)
-                    # lambda1, lambda2, lambda3 = S
-                    # delta1 = (lambda1 - lambda2) / lambda1
-                    # delta2 = (lambda2 - lambda3) / lambda1
-                    # delta3 = lambda3 / lambda1
                     delta1, delta2, delta3 = deltas_lut[r_idx, p_i, :]
 
                     # Compute H
-                    # p_i_neighbourhood_points = point_cloud[p_i_neighbourhood]
-                    # x = p_i_neighbourhood_points[:, 0][:, None]
-                    # y = p_i_neighbourhood_points[:, 1][:, None]
-                    # z = p_i_neighbourhood_points[:, 2][:, None]
-                    # X = np.concatenate([x**2, y**2, x*y, x, y, np.ones_like(x)], axis=1)
-                    # w = np.linalg.lstsq(X, z)[0]
-                    # a0, a1, a2, a3, a4, a5 = w
-                    # # xdata = p_i_neighbourhood_points[:, :2]
-                    # # ydata = p_i_neighbourhood_points[:, 2]
-                    # # popt, _ = curve_fit(objective, xdata, ydata, p0=[0,0,0,0,0,0])
-                    # # a0, a1, a2, a3, a4, a5 = popt
-                    # r_x = np.zeros((3))
-                    # r_xy = np.zeros((3))
-                    # r_xx = np.zeros((3))
-                    # r_y = np.zeros((3))
-                    # r_yy = np.zeros((3))
-                    # r_x[2] = 2 * a0 * p_i_point[0] + a2 * p_i_point[1] + a3
-                    # r_xx[2] = 2 * a0
-                    # r_xy[2] = a2
-                    # r_y[2] = 2 * a1 * p_i_point[1] + a2 * p_i_point[0] + a4
-                    # r_yy[2] = 2 * a1
-                    # r_x[0] = 1
-                    # r_y[1] = 1
-                    # E = np.dot(r_x, r_x)
-                    # F = np.dot(r_x, r_y)
-                    # G = np.dot(r_y, r_y)
-                    # L = np.dot(r_xx, p_i_normal)
-                    # M = np.dot(r_xy, p_i_normal)
-                    # N = np.dot(r_yy, p_i_normal)
-                    # H = (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
                     H = H_lut[r_idx, p_i]
 
                     # Set the value
-                    phi_i = np.array(
-                        [cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3, H]
-                    )
+                    phi_i = [cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3, H]
 
                     Phi[:, idx] = phi_i
                 C_r = np.cov(Phi)
@@ -315,6 +224,90 @@ class Extractor(object):
             self.cov_mats.append(keypoint_cov_mats)
         np.save(self.output_path, output_matrix)
 
+    def plot_features(self, H_lut, deltas_lut):
+        # scatter plot H values
+            fig = make_subplots(
+                rows=2,
+                cols=2,
+                specs=[
+                    [{"type": "scene"}, {"type": "scene"}],
+                    [{"type": "scene"}, {"type": "scene"}],
+                ],
+                vertical_spacing=0.01,
+                horizontal_spacing=0.01,
+                subplot_titles=(
+                    "H Value",
+                    "Delta1 Value",
+                    "Delta2 Value",
+                    "Delta3 Value",
+                ),
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(
+                        size=2,
+                        color=np.log(np.abs(H_lut[0, :]) + 0.00001),
+                        showscale=True,
+                        colorscale="thermal",
+                    ),
+                ),
+                row=1,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(
+                        size=2,
+                        color=np.log(np.abs(deltas_lut[0, :, 0]) + 0.00001),
+                        showscale=True,
+                        colorscale="thermal",
+                    ),
+                ),
+                row=1,
+                col=2,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(
+                        size=2,
+                        color=np.log(np.abs(deltas_lut[0, :, 1]) + 0.00001),
+                        showscale=True,
+                        colorscale="thermal",
+                    ),
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=self.point_cloud[:, 0],
+                    y=self.point_cloud[:, 1],
+                    z=self.point_cloud[:, 2],
+                    mode="markers",
+                    marker=dict(
+                        size=2,
+                        color=np.log(np.abs(deltas_lut[0, :, 2]) + 0.00001),
+                        showscale=True,
+                        colorscale="thermal",
+                    ),
+                ),
+                row=2,
+                col=2,
+            )
+
+            fig.show()
 
 def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints):
     extractor = Extractor(
@@ -322,19 +315,18 @@ def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints):
     )
     extractor.extract()
 
-
 def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
     x_lines = []
     y_lines = []
     z_lines = []
-    c = [0, 0, -0.5]
+    c = [0, 0, -1]
     colors1 = ["blue" for _ in range(n_points)]
     colors2 = ["blue" for _ in range(n_points)]
     min_d = 99
     dist = []
     for s in range(n_scales):
-        cov_m1 = np.array(extractor1.cov_mats)[:,s].reshape((n_points, 49))
-        cov_m2 = np.array(extractor2.cov_mats)[:,s].reshape((n_points, 49))
+        cov_m1 = np.array(extractor1.cov_mats)[:, s].reshape((n_points, 49))
+        cov_m2 = np.array(extractor2.cov_mats)[:, s].reshape((n_points, 49))
         dist.append(spatial.distance.cdist(cov_m1, cov_m2, "euclidean"))
     for i in range(n_points):
         for j in range(n_points):
@@ -343,7 +335,7 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
                 # d += np.linalg.norm(
                 #     extractor1.cov_mats[i][s] - extractor2.cov_mats[j][s], ord="fro"
                 # )
-                d += dist[s][i,j]
+                d += dist[s][i, j]
             d /= n_scales
             if d < min_d:
                 min_d = d
@@ -428,14 +420,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default=2, type=int)
     parser.add_argument("--dataset_dir", default="135216_8_seed_0", type=str)
-    parser.add_argument("--keypoint_radius", type=float, default=0.02)
+    parser.add_argument("--keypoint_radius", type=float, default=0.025)
     parser.add_argument("--n_keypoints", type=int, default=1024)
-    parser.add_argument("--r_vals", nargs="+", default=[0.05, 0.075, 0.1], type=float)
-    parser.add_argument("--threshold", type=float, default=1.5)
+    parser.add_argument("--r_vals", nargs="+", default=[0.1], type=float)
+    parser.add_argument("--threshold", type=float, default=0.8)
     parser.add_argument(
+        # "--fragment1", type=str, default="135216_8_seed_0/135216_shard_1.npy"
+        # "--fragment1", type=str, default="518034_8_seed_0/518034_shard_0.npy"
         "--fragment1", type=str, default="Venus/venus_part01.npy"
     )
     parser.add_argument(
+        # "--fragment2", type=str, default="135216_8_seed_0/135216_shard_2.npy"
+        # "--fragment2", type=str, default="518034_8_seed_0/518034_shard_2.npy"
         "--fragment2", type=str, default="Venus/venus_part02.npy"
     )
     args = parser.parse_args()
@@ -471,9 +467,13 @@ if __name__ == "__main__":
         r = args.keypoint_radius
         scales = args.r_vals
         n_points = args.n_keypoints
-        extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points, plot_features=False)
+        extractor1 = Extractor(
+            args.fragment1, "temp", r, scales, n_points, plot_features=False
+        )
         extractor1.extract()
-        extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points, plot_features=False)
+        extractor2 = Extractor(
+            args.fragment2, "temp", r, scales, n_points, plot_features=False
+        )
         extractor2.extract()
 
         visualize_matches(extractor2, extractor1, n_points, len(scales), args.threshold)
