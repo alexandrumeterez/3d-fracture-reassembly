@@ -124,8 +124,8 @@ class Extractor(object):
         normals = normals * np.sign(SD[:, None])
 
         # Extract keypoint indices
-        keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints-2048:-2048]
-        # keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints :]
+        # keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints-2048:-2048]
+        keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints :]
         self.keypoints = self.point_cloud[keypoint_indices]
         # Compute the neighbourhoods in all r vals
         neighbourhoods = {}
@@ -319,7 +319,7 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
     x_lines = []
     y_lines = []
     z_lines = []
-    c = [0, 0, -1]
+    c = [1, 0, 0]
     colors1 = ["blue" for _ in range(n_points)]
     colors2 = ["blue" for _ in range(n_points)]
     min_d = 99
