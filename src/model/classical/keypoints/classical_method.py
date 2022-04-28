@@ -119,6 +119,7 @@ class Extractor(object):
         nbhd = tree.query_ball_point(point_cloud, keypoint_radius, workers=-1)
         SD = self.get_SD_for_point_cloud(point_cloud, normals, nbhd)
         print(f"zeros: {np.sum(np.isclose(SD, 0))}, out of {len(SD)}")
+        # if SD == 0 we would set the normal to 0, which is bad
         SD[SD == 0] = 1e-10
         # Fix normals
         normals = normals * np.sign(SD[:, None])
@@ -146,7 +147,7 @@ class Extractor(object):
                     neighbourhoods[r][p_i]
                 )
         if self.plot_features:
-            self.plot_features(self, H_lut, deltas_lut)
+            self.feature_plot(H_lut, deltas_lut)
 
         # Output
         n_features_used = 7  # change this if you uncomment any of the rest
@@ -224,7 +225,7 @@ class Extractor(object):
             self.cov_mats.append(keypoint_cov_mats)
         np.save(self.output_path, output_matrix)
 
-    def plot_features(self, H_lut, deltas_lut):
+    def feature_plot(self, H_lut, deltas_lut):
         # scatter plot H values
             fig = make_subplots(
                 rows=2,
