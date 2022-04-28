@@ -275,7 +275,7 @@ if __name__ == '__main__':
 	parser.add_argument("--keypoint_radius", type=float, required=True)
 	parser.add_argument("--n_keypoints", type=int, required=True)
 	parser.add_argument("--r_vals", nargs='+', required=True, type=float)
-	parser.add_argument("--threshold", type=float, default=1.0, required=True, type=float)
+	parser.add_argument("--threshold", type=float, default=1.0, required=True)
 	parser.add_argument("--fragment1", type=str)
 	parser.add_argument("--fragment2", type=str)
 	args = parser.parse_args()
@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
 		r = args.keypoint_radius
 		scales = args.r_vals
-		n_points = args.n_keypointso
+		n_points = args.n_keypoints
 		extractor1 = Extractor(args.fragment1, "temp", r, scales, n_points)
 		extractor1.extract()
 		extractor2 = Extractor(args.fragment2, "temp", r, scales, n_points)
