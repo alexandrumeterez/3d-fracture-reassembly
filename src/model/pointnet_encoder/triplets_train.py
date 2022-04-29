@@ -318,7 +318,7 @@ if __name__ == "__main__" :
 
 
                 loss = triplet_loss(enc_a, enc_p, enc_n)
-                print(loss.item())
+                #print(loss.item())
             # loss, pos_mask, neg_mask = online_mine_hard(kps[:,0],enc_a,margin = 0.1,device ='cuda')
 
                 loss.backward()
