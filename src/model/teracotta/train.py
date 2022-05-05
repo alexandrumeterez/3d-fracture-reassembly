@@ -29,17 +29,18 @@ def train(net, train_loader,val_loader, criterion, optimizer, num_epochs):
 def evaluate(net, val_loader, criterion, optimizer):
     net.eval()
     # for epoch in range(num_epochs):
-    running_loss = 0.0
-    for i, data in enumerate(val_loader, 0):
-        optimizer.zero_grad()
-        pointsx = data['x']
-        pointsy = data['y']
-        embx = net(pointsx)
-        emby = net(pointsy)
-        loss = criterion(embx, emby)
+    with torch.no_grad():
+        running_loss = 0.0
+        for i, data in enumerate(val_loader, 0):
+            optimizer.zero_grad()
+            pointsx = data['x']
+            pointsy = data['y']
+            embx = net(pointsx)
+            emby = net(pointsy)
+            loss = criterion(embx, emby)
 
-        running_loss += loss.item()
-    print('Val loss: %.3f' % ( running_loss / len(val_loader)))
+            running_loss += loss.item()
+        print('Val loss: %.3f' % ( running_loss / len(val_loader)))
 if __name__ == '__main__':
     net = PointNet(dim=256)
     train_loader = ...
