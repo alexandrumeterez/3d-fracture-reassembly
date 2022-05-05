@@ -56,7 +56,7 @@ if __name__ == '__main__':
         colors.append(score)
         labels.append(score > lbd * Z_i)
     print(np.min(colors), np.max(colors), np.mean(colors))
-    dist,neighbors = tree.query(x=point_cloud, k=60,distance_upper_bound=0.1, workers=-1)
+    dist,neighbors = tree.query(x=point_cloud, k=60, workers=-1)
     dict_new = {}
     for i in range(point_cloud.shape[0]):
         dict_new[i] = {i}
