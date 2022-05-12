@@ -113,6 +113,16 @@ if __name__ == '__main__':
 	parser.add_argument('--r', default=0.1, type=float)
 	parser.add_argument('--save', action='store_true')
 	parser.add_argument('--file', action='store_true')
+	args = parser.parse_args()
+	objects = os.listdir(args.object_dir)
+	for object in objects:
+		obj_path = os.path.join(args.object_dir,object)
+		extractor = SDExtractor(obj_path, args.save, args.file)
+		if not args.file:
+				extractor.extract_keypoints(args.nkeypoints, args.r)
+		else:
+				extractor.extract_keypoints_shard(args.nkeypoints, args.r)
+
 
 	args = parser.parse_args()
 
