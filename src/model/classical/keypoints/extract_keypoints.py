@@ -108,7 +108,7 @@ class SDExtractor(object):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--object_dir', type=str, required=True)
+	parser.add_argument('--object_dir', type=str, required=True,default = 'cluster/project/infk/courses/252-0579-00L/group_reassembly/Dense_data')
 	parser.add_argument('--nkeypoints', default=512, type=int)
 	parser.add_argument('--r', default=0.1, type=float)
 	parser.add_argument('--save', action='store_true')
