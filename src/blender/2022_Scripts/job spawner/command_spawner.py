@@ -12,11 +12,9 @@ input_dir = os.path.abspath("script-input")
 
 
 def spawn_jobs(shard_count, seed_count):
-    i = 0
     files = os.listdir(input_dir)
-    for file in files:
+    for i, file in enumerate(files):
         print(f"Spawning Process {i} of {len(files)}")
-        i+=1
         subprocess.run(
             [
                 "bsub",
