@@ -14,19 +14,22 @@ Blender Auto Fracture Script
 Prerequisites: Blender 2.79 Fracture Build
 
 This script does:
-    -import obj meshes
+    -import obj or stl meshes (uncomment the according line on line 46/47)
     -place their center at 0,0
     -subdivide them to approx 50k vertices
     -fracture them with settings below
-    -save them to ply files
+    -save them to obj files
 
 Instructions:
     -Add all Meshes to the folder /script-input in the folder where blender is located
-    -Run this script with Blender, i.e. blender --background --python myscript.py
-    -Outputs will be saved to the Blender Folder/script-output
-    
-Note that Blender will freeze during execution. You can see what it's doing in the terminal.
-    (Enable with: Window > Toggle System Console)
+    -Run this script with Blender and pass the arguments for shard count, seed count and the model file name
+     Usage: ./blender --background --python blender_fracture_single.py -- <shard_count> <seed_count> <model_name> [<model_name>]
+     (a list of object names can be supplied as well)
+     Example: ./blender --background --python blender_fracture_single.py -- 10 1 model.obj  
+                will fragment the model 'model.obj' into 10 shards with a single seed
+    or on a Cluster:
+        bsub -R "rusage[mem=8000]" ./blender --background --python blender_fracture_single.py -- 1 10 model.obj
+    -Outputs will be saved to the Blender Folder/script-output 
 """
 
 # variables
@@ -43,7 +46,9 @@ seed_count = int(argv[index+1])
 model_list = argv[index+2:]
 print("Splitting objects: ", model_list, " with ", shard_count, " shards")
 for o in model_list:
-    bpy.ops.import_mesh.stl(filepath=os.path.join(input_path, o))
+    # bpy.ops.import_mesh.stl(filepath=os.path.join(input_path, o))
+    bpy.ops.import_scene.obj(filepath=os.path.join(input_path, o))
+    bpy.context.scene.objects.active = bpy.context.selected_objects[0]
     # replace name of obj with filename
     obj = bpy.context.active_object
     obj.name = o[:-4]
@@ -107,7 +112,7 @@ for o in model_list:
         md = ob.modifiers["Fracture"]
         md.fracture_mode = 'PREFRACTURED'
         md.frac_algorithm = 'BOOLEAN_FRACTAL'
-        md.fractal_amount = 0.3
+        md.fractal_amount = 0.3 #0.3 for realistic fracture surface roughness
         md.fractal_cuts = 3
         md.fractal_iterations = 4
         md.shard_count = shard_count
@@ -120,6 +125,7 @@ for o in model_list:
         bpy.ops.object.select_all(action='DESELECT')    
         scene = bpy.context.scene
         
+        folder = os.path.abspath("script-output")
         if len(scene.objects) < shard_count + 1:
             print("Not enough shards, drop object:" + current_mesh)
             with open(os.path.join(folder,"skipped_"+current_mesh+".txt"), "a") as f:
@@ -137,7 +143,6 @@ for o in model_list:
         bpy.ops.object.select_all(action='DESELECT')    
         scene = bpy.context.scene
         
-        folder = os.path.abspath("script-output")
 
         name = current_mesh + "_" + str(shard_count) + "_seed_" + str(seed)
         path = os.path.join(folder, name)
@@ -156,6 +161,7 @@ for o in model_list:
                             use_uvs=False, 
                             use_materials=False,
                             use_selection=True,
+                            use_triangles=True
                             )
                     frag_num += 1
                     print("Save object", ob.name)
