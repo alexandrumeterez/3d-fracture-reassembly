@@ -94,7 +94,7 @@ classifier.to(device)
 class object():
     def __init__(self,obj_path):
         self.pc_dir = obj_path
-        self.kp_dir = os.path.join(self.pc_dir,"keypoints_cls")
+        self.kp_dir = os.path.join(self.pc_dir,"keypoints")
         self.data = {}
         self.load()
     def load (self):
@@ -143,7 +143,7 @@ class dataset_pc():
         return obj.data
 
 #### Params #### 
-dataset_path  = "/home/sombit/object_inv"
+dataset_path  = "/home/somdey/object_inv/train"
 epochs = 40
 batch_size = 1
 
@@ -257,21 +257,32 @@ def get_triplet(features, kps,frag_id,rad_pos,rad_neg):
     for frag in kps.keys():
         if (frag != frag_id) :
             dist = torch.cdist(kps[frag_id],kps[frag] )
-            min_dist = torch.min(dist,axis = 1)
+            min_dist, min_indices = torch.min(dist,axis = 1)
             idx = torch.where(min_dist <rad_pos)
+            idx = idx[0]
+            
             min_idx = torch.argmin(dist, axis=1)
             pos = min_idx[idx]
             anchor = features[frag_id][idx]
             positive = features[frag][pos]
 
             f_dist = torch.cdist(features[frag_id],features[frag] )
-            neg_mat = torch.where(dist>rad_neg,f_dist,float('inf'))
+            #print(dist.type(),f_dist.type(),rad_neg)
+            neg_mat = torch.where(dist>rad_neg,f_dist,f_dist*1000000)
             
             min_idx = torch.argmin(neg_mat ,axis = 1)
             neg = min_idx[idx]
-            negative = features[frag][neg]
-            loss.append(  triplet_loss(anchor, positive, negative))
-    loss_total = sum(loss)/len(loss)
+            negative = features[frag][neg] 
+            if(idx.numel()):
+                #print(anchor,positive, negative)
+                loss_curr =  triplet_loss(anchor, positive, negative)
+                if(torch.isnan(loss_curr)):
+                    print(anchor,positive,negative,idx)
+                loss.append(loss_curr)
+    print(loss)
+    loss_total = sum(loss)/len(loss) 
+
+
     return loss_total
 
 
@@ -289,6 +300,7 @@ def get_triplet(features, kps,frag_id,rad_pos,rad_neg):
     # # print(min_idx[idx])
     # return min_dist[idx], min_idx[idx], idx
 
+net.float()
 
 for epoch in range(epochs):
         running_loss = 0.0
@@ -320,4 +332,5 @@ for epoch in range(epochs):
             loss_sum = sum(loss)/len(loss)
             loss_sum.backward()
             optimizer.step()
+            print(loss_sum.item(), " Loss Currently")
         
