@@ -263,10 +263,12 @@ def get_triplet(features, kps,frag_id,rad_pos,rad_neg):
             pos = min_idx[idx]
             anchor = features[frag_id][idx]
             positive = features[frag][pos]
-            neg_idx = torch.where(dist>rad_neg)
-            dist = torch.cdist(features[frag_id],features[frag] )
-            min_idx = torch.argmin(dist ,axis = 1)
-            neg = min_idx[neg_idx]
+
+            f_dist = torch.cdist(features[frag_id],features[frag] )
+            neg_mat = torch.where(dist>rad_neg,f_dist,float('inf'))
+            
+            min_idx = torch.argmin(neg_mat ,axis = 1)
+            neg = min_idx[idx]
             negative = features[frag][neg]
             loss.append(  triplet_loss(anchor, positive, negative))
     loss_total = sum(loss)/len(loss)
@@ -305,7 +307,8 @@ for epoch in range(epochs):
                 torch_data = torch_data.permute(0,2,1)
 
                 kp = batch[frag_id]['kp'].float()
-                kps[frag_id] = kp[0]
+                torch_kp = torch.Tensor(kp).to(device)
+                kps[frag_id] = torch_kp[0]
                
                 output = classifier(torch_data, to_categorical(torch.tensor(0).to(device),NUM_CLASSES))
                 # print(output[0][0,idx[0,:,0]].shape)
@@ -313,7 +316,7 @@ for epoch in range(epochs):
                 # print(features[0].shape)
             loss = []
             for frag_id in batch.keys():
-                loss.append(get_triplet(features, kps,frag_id, 0.001,0.04))
+                loss.append(get_triplet(features, kps,frag_id, 0.01,0.04))
             loss_sum = sum(loss)/len(loss)
             loss_sum.backward()
             optimizer.step()
