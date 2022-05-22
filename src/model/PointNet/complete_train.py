@@ -143,7 +143,7 @@ class dataset_pc():
         return obj.data
 
 #### Params #### 
-dataset_path  = "/home/sombit/object_test"
+dataset_path  = "/home/sombit/object_inv"
 epochs = 40
 batch_size = 1
 
