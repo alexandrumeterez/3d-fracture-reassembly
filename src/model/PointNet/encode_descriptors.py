@@ -27,27 +27,29 @@ from triplets_train import NeuralNetwork
 
 def store_descriptors(d, dir, filepath_desc):
     path , file = os.path.split(filepath_desc)
-    file_name = os.path.join(dir,file)
     # pdb.set_trace()
+    p = Path(dir)
+    p.mkdir(exist_ok=True)
+    file_name = os.path.join(dir,file)
     np.save(file_name, d)
 
 
-def encode_descriptors(desc_files, obj_encoded_desc_dir, net):
+def encode_descriptor(desc_files, obj_encoded_desc_dir, net):
     for f in desc_files:
         desc = np.load(f)
-        enc_desc = net(torch.Tensor(desc))
+        enc_desc = net(torch.Tensor(desc).cuda())
         print("Storing encodings for fragment: ", f)
         # pdb.set_trace()
         store_descriptors(enc_desc.cpu().detach().numpy(), obj_encoded_desc_dir, f)
 
-names = ['brick', 'cube_6', 'cube_20',  'cake', 'gargoyle', 'head', 'sculpture', 'venus', 'cat', 'cat_low_res_0']
-for i in range(0,6):
-    if i == 2: continue
-    names.append(f'cat_seed_{i}')
-for i in range (1,15):
-    names.append(f'cube_20_seed_{i}')
-for i in range (1,10):
-    names.append(f'cylinder_20_seed_{i}')
+# names = ['brick', 'cube_6', 'cube_20',  'cake', 'gargoyle', 'head', 'sculpture', 'venus', 'cat', 'cat_low_res_0']
+# for i in range(0,6):
+#     if i == 2: continue
+#     names.append(f'cat_seed_{i}')
+# for i in range (1,15):
+#     names.append(f'cube_20_seed_{i}')
+# for i in range (1,10):
+#     names.append(f'cylinder_20_seed_{i}')
 
 
 KEYPOINT_PATH = "./data/keypoints/keypoints_2/keypoints_2/"
@@ -58,31 +60,61 @@ ENCODED_DESC = "./data/keypoints/encoded_desc/"
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using {} device'.format(device))
 net = NeuralNetwork().to(device)
+net.load_state_dict(torch.load('triplet_model_cls_cube_best.pth'))
 net.eval()
 print(net)
 
-for name in names[:2]:
-    OBJECT = name
-    # OBJECT = "cube_6"
-    USIP_TYPE = "_FN"
-    print("Processing: ", OBJECT+USIP_TYPE)
-    # kp_files= glob.glob(KEYPOINT_PATH+OBJECT+USIP_TYPE+"/*.npy")
-    desc_files = sorted(glob.glob(DESC_PATH+OBJECT+USIP_TYPE+"/*.npy"))
-    # print(kp_files)
-    obj_encoded_desc_dir = os.path.join(ENCODED_DESC, OBJECT + USIP_TYPE)
-    # print(desc_files)
-    ensure_dir(obj_encoded_desc_dir)
-    encode_descriptors(desc_files, obj_encoded_desc_dir, net)
+# for name in names[:2]:
+#     OBJECT = name
+#     # OBJECT = "cube_6"
+#     USIP_TYPE = "_FN"
+#     print("Processing: ", OBJECT+USIP_TYPE)
+#     # kp_files= glob.glob(KEYPOINT_PATH+OBJECT+USIP_TYPE+"/*.npy")
+#     desc_files = sorted(glob.glob(DESC_PATH+OBJECT+USIP_TYPE+"/*.npy"))
+#     # print(kp_files)
+#     obj_encoded_desc_dir = os.path.join(ENCODED_DESC, OBJECT + USIP_TYPE)
+#     # print(desc_files)
+#     ensure_dir(obj_encoded_desc_dir)
+#     encode_descriptors(desc_files, obj_encoded_desc_dir, net)
+PC_PATH = "/home/sombit/object_test/" 
+object_type =os.listdir(PC_PATH)
+if __name__ == '__main__':
+    for object_t in object_type:
+        print(object_t)
+        object_t_dir = os.path.join(PC_PATH,object_t)
+        objects = os.listdir(object_t_dir)
+        for object_ in objects:
+            obj_pc_dir = os.path.join(object_t_dir,object_)
+            obj_triplet_dir = os.path.join(obj_pc_dir,"triplets_cls")
+            obj_enc_dir = os.path.join(obj_pc_dir,"encoded_cls")
+            
+            # pc_files= sorted(glob.glob(obj_pc_dir+"/*.npy"))
+            # KEYPOINT_PATH = os.path.join(obj_pc_dir,'keypoints')
+            # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
+            # kp_files= sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy")))
 
-for name in names[:1]:
-    OBJECT = name
-    # OBJECT = "cube_6"
-    USIP_TYPE = "_1vN"
-    print("Processing: ", OBJECT+USIP_TYPE)
-    # kp_files= glob.glob(KEYPOINT_PATH+OBJECT+USIP_TYPE+"/*.npy")
-    desc_files = sorted(glob.glob(DESC_PATH+OBJECT+USIP_TYPE+"/*.npy"))
-    # print(kp_files)
-    obj_encoded_desc_dir = os.path.join(ENCODED_DESC, OBJECT + USIP_TYPE)
-    # print(desc_files)
-    ensure_dir(obj_encoded_desc_dir)
-    encode_descriptors(desc_files, obj_encoded_desc_dir, net)
+            DESC_PATH = os.path.join(obj_pc_dir,'features_cls')
+            # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
+
+            desc_files = sorted(glob.glob(DESC_PATH+"/*.npy"))
+            encode_descriptor(desc_files, obj_enc_dir, net)
+            break
+        break
+
+        # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
+        # triplet_path = os.path.join(obj_pc_dir,'triplets')
+        # triplet_files.append(sorted(glob.glob(triplet_path+"/*.npz")))
+
+# for name in names[:1]:
+#     OBJECT = name
+#     # OBJECT = "cube_6"
+#     USIP_TYPE = "_1vN"
+#     print("Processing: ", OBJECT+USIP_TYPE)
+#     # kp_files= glob.glob(KEYPOINT_PATH+OBJECT+USIP_TYPE+"/*.npy")
+#     desc_files = sorted(glob.glob(DESC_PATH+OBJECT+USIP_TYPE+"/*.npy"))
+#     # print(kp_files)
+#     obj_encoded_desc_dir = os.path.join(ENCODED_DESC, OBJECT + USIP_TYPE)
+#     # print(desc_files)
+#     ensure_dir(obj_encoded_desc_dir)
+    
+#     encode_descriptors(desc_files, obj_encoded_desc_dir, net)
