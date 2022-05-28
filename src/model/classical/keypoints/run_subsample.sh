@@ -1,4 +1,3 @@
-
 folders=$(ls /cluster/project/infk/courses/252-0579-00L/group_reassembly/data/ | sort)
 
 for folder in $folders

@@ -88,9 +88,9 @@ class Extractor(object):
         else:
             keypoint_indices = np.argsort(np.abs(SD))[-self.n_keypoints:]
         
-
         self.keypoints = self.point_cloud[keypoint_indices]
 
+        print(self.keypoints.shape)
         # Compute the neighbourhoods in all r vals 
         neighbourhoods = {}
         for r in self.r_vals:
@@ -139,46 +139,6 @@ class Extractor(object):
                     phi_i.append(cos_beta)
                     phi_i.append(cos_gamma)
 
-                    # # Compute C_p_i and delta1, delta2, delta3
-                    # C_p_i = np.cov(point_cloud[p_i_neighbourhood].T) * len(p_i_neighbourhood)
-                    # U, S, Vt = np.linalg.svd(C_p_i)
-                    # lambda1, lambda2, lambda3 = S
-                    # delta1 = (lambda1 - lambda2) / lambda1
-                    # delta2 = (lambda2 - lambda3) / lambda1
-                    # delta3 = lambda3 / lambda1
-                    # phi_i.append(delta1)
-                    # phi_i.append(delta2)
-                    # phi_i.append(delta3)
-
-                    # # Compute H
-                    # p_i_neighbourhood_points = point_cloud[p_i_neighbourhood]
-                    # xdata = p_i_neighbourhood_points[:, :2]
-                    # ydata = p_i_neighbourhood_points[:, 2]
-                    # popt, _ = curve_fit(objective, xdata, ydata, p0=[0,0,0,0,0,0])
-                    # a0, a1, a2, a3, a4, a5 = popt
-                    # r_x = np.zeros((3))
-                    # r_xy = np.zeros((3))
-                    # r_xx = np.zeros((3))
-                    # r_y = np.zeros((3))
-                    # r_yy = np.zeros((3))
-                    # r_x[2] = 2 * a0 * p_i_point[0] + a2 * p_i_point[1] + a3
-                    # r_xx[2] = 2 * a0
-                    # r_xy[2] = a2
-                    # r_y[2] = 2 * a1 * p_i_point[1] + a2 * p_i_point[0] + a4
-                    # r_yy[2] = 2 * a1
-                    # r_x[0] = 1
-                    # r_y[1] = 1
-                    # E = np.dot(r_x, r_x)
-                    # F = np.dot(r_x, r_y)
-                    # G = np.dot(r_y, r_y)
-                    # L = np.dot(r_xx, p_i_normal)
-                    # M = np.dot(r_xy, p_i_normal)
-                    # N = np.dot(r_yy, p_i_normal)
-                    # H = (E * N - 2 * F * M + G * L) / (2 * (E * G - F ** 2))
-
-                    # # Set the value
-                    # phi_i.append(H)
-
                     Phi.append(phi_i)
                 Phi = np.array(Phi)
                 C_r = np.cov(Phi.T)
@@ -190,6 +150,7 @@ class Extractor(object):
                 keypoint_cov_mats.append(log_C_r)
                 output_matrix[n_keypoint, 6 + r_idx * n_features_used * n_features_used: 6 + (r_idx + 1) * n_features_used * n_features_used] = log_C_r.ravel()
             self.cov_mats.append(keypoint_cov_mats)
+        print(f"saving to: {self.output_path}")
         np.save(self.output_path, output_matrix)
 
 def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints, nms, nms_rad):
@@ -367,8 +328,9 @@ if __name__ == '__main__':
             print(f"Fragment: {fragment}")
             fragment_path = os.path.join(args.dataset_dir, fragment)
             output_path = os.path.join(keypoints_dir, fragment)
-            f_args.append([fragment_path, output_path, args.keypoint_radius, args.r_vals, args.n_keypoints, args.nms, args.nms_rad])
-            f(*(f_args[0])) 
+            # f_args.append([fragment_path, output_path, args.keypoint_radius, args.r_vals, args.n_keypoints, args.nms, args.nms_rad])
+            fargs = [fragment_path, output_path, args.keypoint_radius, args.r_vals, args.n_keypoints, args.nms, args.nms_rad]
+            f(*fargs) 
     elif args.mode == 2:
         # Just for visualization purposes
 
