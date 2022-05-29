@@ -2,7 +2,7 @@ from cgi import test
 import os
 from pyexpat import features
 from re import L
-from black import out 
+#from black import out 
 import numpy as np
 import glob
 from get_neighbors import *
@@ -19,7 +19,7 @@ from tqdm import tqdm
 import provider
 import numpy as np
 import pdb
-from torchsummary import summary
+#from torchsummary import summary
 from get_neighbors import get_nbrs, get_weights, ensure_dir
 import os
 import torch
@@ -93,7 +93,8 @@ classifier.to(device)
 
 class object():
     def __init__(self,obj_path):
-        self.pc_dir = obj_path
+        #self.pc_dir = obj_path
+        self.pc_dir = os.path.join(obj_path,"subsampled")
         self.kp_dir = os.path.join(self.pc_dir,"keypoints")
         self.data = {}
         self.load()
@@ -143,7 +144,7 @@ class dataset_pc():
         return obj.data
 
 #### Params #### 
-dataset_path  = "/home/somdey/object_inv/train"
+dataset_path  = "/cluster/project/infk/courses/252-0579-00L/group_reassembly/data"
 epochs = 10
 batch_size = 1
 
