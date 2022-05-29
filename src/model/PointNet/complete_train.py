@@ -144,7 +144,7 @@ class dataset_pc():
 
 #### Params #### 
 dataset_path  = "/home/somdey/object_inv/train"
-epochs = 40
+epochs = 10
 batch_size = 1
 
 
@@ -167,7 +167,7 @@ dataloader_train=torch.utils.data.DataLoader(train_set,batch_size=batch_size, sh
 dataloader_val = torch.utils.data.DataLoader(val_set,batch_size=1, shuffle=True)
 
 ##### Network Params ###
-optimizer = torch.optim.AdamW(net.parameters(), lr = 0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01, amsgrad=False)
+optimizer = torch.optim.AdamW(net.parameters(), lr = 0.0001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01, amsgrad=False)
 scheduler = ExponentialLR(optimizer, gamma=0.99)
 triplet_loss = nn.TripletMarginLoss(margin=0.2)
 ########## 
@@ -276,10 +276,9 @@ def get_triplet(features, kps,frag_id,rad_pos,rad_neg):
             if(idx.numel()):
                 #print(anchor,positive, negative)
                 loss_curr =  triplet_loss(anchor, positive, negative)
-                if(torch.isnan(loss_curr)):
-                    print(anchor,positive,negative,idx)
+                #if(torch.isnan(loss_curr)):
+                #    print(anchor,positive,negative,idx)
                 loss.append(loss_curr)
-    print(loss)
     loss_total = sum(loss)/len(loss) 
 
 
@@ -333,4 +332,5 @@ for epoch in range(epochs):
             loss_sum.backward()
             optimizer.step()
             print(loss_sum.item(), " Loss Currently")
-        
+        torch.save(classifier.state_dict(), "/home/somdey/point.pth")
+
