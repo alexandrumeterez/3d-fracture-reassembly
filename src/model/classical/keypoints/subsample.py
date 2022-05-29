@@ -48,4 +48,4 @@ if __name__ == "__main__":
         output_pcd[:, :3] = np.array(pcd.points)
         output_pcd[:, 3:] = np.array(pcd.normals)
         
-        np.save(output_path, point_cloud)
+        np.save(output_path, output_pcd)
