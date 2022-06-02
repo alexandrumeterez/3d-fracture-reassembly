@@ -1,5 +1,4 @@
 folders=$(ls /cluster/project/infk/courses/252-0579-00L/group_reassembly/data/ | sort)
-echo $folders
 for folder in $folders
 do
 	dataset_dir="/cluster/project/infk/courses/252-0579-00L/group_reassembly/data/$folder"
