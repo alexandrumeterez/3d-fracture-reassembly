@@ -1,10 +1,11 @@
 # cluster command: bsub -R "rusage[mem=8000]" ./blender --background --python blender_auto_fracture_import.py
 """
 USAGE:
-    call this file from commandline to generate a job for each object located in the 'script-input' folder inside the blender directory
+    For use on the ETH Euler Cluster's batch system:
+    Call this file from commandline to generate a job for each object located in the 'script-input' folder inside the blender directory
     arguments: --shard_count <int> --seed_count <int>
 
-    needs the file 'blender_fracture_single.py' in the same folder inside the blnder directory
+    needs the file 'blender_fracture_single.py' in the same directory as the blender executable
 """
 import os, subprocess, argparse
 
