@@ -3,8 +3,6 @@ import open3d as o3d
 import os
 import plotly.graph_objects as go
 
-from create_neighbor_LUT import generate_neighbors
-
 """
 Script to convert Pointclouds with high density
 Downsamples pointcloud, saves a html plot and generates a csv with neighboring information
@@ -68,11 +66,6 @@ def collect_pointclouds(dir, input_root, output_root):
     print(f"Maximal Scale: {scale}")
     _downsample_and_save(dir, pc_dict, output_root, scale)
 
-    # Save neighbor information to csv, super slow for large point clouds
-    # neighbors = generate_neighbors(os.path.join(output_root, dir))
-    # head_str = f"Neighboring Matrix of Fragments 0-{len(files)} from {dir}\n {files}"
-    # np.savetxt(os.path.join(output_root, dir, "neighbors.csv"), neighbors, header=head_str, fmt='%i')
-
 
 def _downsample_and_save(folder, pc_dict, output_root, scale=2):
     """
@@ -84,7 +77,7 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
 
     fig = go.Figure()
     for file, pcloud in pc_dict.items():
-        pcloud.scale(2/scale, [0,0,0])
+        pcloud.scale(2 / scale, [0, 0, 0])
         pc_d = pcloud.voxel_down_sample(voxel_size=sample_size)
 
         points = np.asarray(pc_d.points)
@@ -108,16 +101,28 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
                 mode="markers",
                 marker=dict(size=2),
             )
-        ) 
+        )
 
         out_file = os.path.join(output_root, folder, file)
         # print(f"Saving {out_file}: {pc_d}")
         np.save(out_file, data)
-    
-    fig.update_layout(scene = dict(
-        xaxis = dict(nticks=5, range=[-1.5,1.5],),
-                     yaxis = dict(nticks=5, range=[-1.5,1.5],),
-                     zaxis = dict(nticks=5, range=[-1.5,1.5],),))
+
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(
+                nticks=5,
+                range=[-1.5, 1.5],
+            ),
+            yaxis=dict(
+                nticks=5,
+                range=[-1.5, 1.5],
+            ),
+            zaxis=dict(
+                nticks=5,
+                range=[-1.5, 1.5],
+            ),
+        )
+    )
     fig.write_html(os.path.join(output_root, folder, "scatter_plot.html"))
 
 
