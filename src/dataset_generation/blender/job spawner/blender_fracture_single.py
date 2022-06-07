@@ -1,10 +1,7 @@
 import os, math, sys
 import bpy
 import bmesh
-from bpy.types import Operator
-from bpy.props import FloatVectorProperty, IntVectorProperty
-from bpy_extras.object_utils import AddObjectHelper, object_data_add
-from mathutils import Matrix
+
 bpy.app.debug = True
 bpyscene = bpy.context.scene
 
@@ -16,13 +13,13 @@ Prerequisites: Blender 2.79 Fracture Build
 This script does:
     -import obj or stl meshes (uncomment the according line on line 46/47)
     -place their center at 0,0
-    -subdivide them to approx 50k vertices
+    -remesh and subdivide them to approx 50k vertices
     -fracture them with settings below
     -save them to obj files
 
 Instructions:
-    -Add all Meshes to the folder /script-input in the folder where blender is located
-    -Run this script with Blender and pass the arguments for shard count, seed count and the model file name
+    -Run this script with Blender from the command line
+         and pass the arguments for shard count, seed count and the model file name
      Usage: ./blender --background --python blender_fracture_single.py -- <shard_count> <seed_count> <model_name> [<model_name>]
      (a list of object names can be supplied as well)
      Example: ./blender --background --python blender_fracture_single.py -- 10 1 model.obj  
