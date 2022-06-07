@@ -7,6 +7,7 @@ More detailed instructions can be found inside each script itself.
 
 The blender script makes use of a modified blender build of 2.79b. Only this special build will work.
 - Builds: https://drive.google.com/drive/folders/19T2rFXduMOzLDHcvD1t_abYLTwE1IREl
+    - in case no builds are available anymore, it may also be build from source: https://github.com/blender/blender/tree/fracture_modifier-master
 - Video Tutorial: https://www.youtube.com/watch?v=rCAzkTVyNOw
 - Documentation: https://archive.blender.org/wiki/index.php/User:Scorpion81/Fracture_Documentation/
 
