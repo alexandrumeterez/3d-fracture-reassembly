@@ -11,20 +11,20 @@ Folder structure:
     '-root
         '-npy
             '-OUTPUT FOLDERS
-        '-ply
+        '-obj
             '-INPUT FOLDERS
 
-INPUT FORMAT: .ply pointcloud with normals
+INPUT FORMAT: .obj pointcloud with normals
 OUTPUT FORMAT: .npy array with [x y z nx ny nz] values
 
-Loops over all subfolders of root/input_folder and outputs to same folder in root/output_folder
+Loops over all subfolders of input_folder and outputs to same folder in output_folder
 Fragments with <1000 points after downsampling won't get downsampled
 """
 
-root = "PC_Thingi10k"
-input_folder = f"{root}/ply"  # should contain pointclouds in .ply format
+root = "./"
+input_folder = f"{root}/obj"  # should contain pointclouds in .obj format
 output_folder = f"{root}/npy"  # will be generated for output
-sample_size = 0.005
+sample_size = 0.075
 
 
 def convert_pointclouds(input_root, output_root):
@@ -43,27 +43,29 @@ def collect_pointclouds(dir, input_root, output_root):
     """
     convert and save all pointcloud data from a single folder
     """
+    print(f"Object: {dir}")
     files = [
-        x[:-4] for x in os.listdir(os.path.join(input_root, dir)) if x.endswith(".ply")
+        x[:-4] for x in os.listdir(os.path.join(input_root, dir)) if x.endswith(".obj")
     ]
     pc_dict = {}
     b_max = np.zeros((3,))
     b_min = np.zeros((3,))
+    # if len(files) < 8:
+    #     print(f"Not enough shards: {len(files)}, Object: {dir}")
+    #     return
 
     for file in files:
-        pc = o3d.io.read_point_cloud(os.path.join(input_root, dir, f"{file}.ply"))
+        mesh = o3d.io.read_triangle_mesh(os.path.join(input_root, dir, f"{file}.obj"))
+        pc = o3d.geometry.PointCloud()
+        pc.points = mesh.vertices
+        pc.normals = mesh.vertex_normals
         b_max = np.max([pc.get_max_bound(), b_max], axis=0)
         b_min = np.min([pc.get_min_bound(), b_min], axis=0)
-        print(
-            f"Reading {file}, Max Bound:{b_max}, Min Bound: {b_min}" + 30 * " ",
-            end="\r",
-        )
         pc_dict[file] = pc
-    print("\n")
     scale = np.max(b_max - b_min)
     if scale < 0.01:
         assert f"SCALE TOO SMALL -- Folder: {dir}"
-    print(f"Maximal Scale: {scale}")
+
     _downsample_and_save(dir, pc_dict, output_root, scale)
 
 
@@ -83,12 +85,9 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
         points = np.asarray(pc_d.points)
         normals = np.asarray(pc_d.normals)
         if points.shape[0] < 1000:
-            print(f"{file} resampled to < 1000 points, using original")
+            print(f"{file} resampled to < 1000 points, using original: #{points.shape[0]}")
             points = np.asarray(pcloud.points)
             normals = np.asarray(pcloud.normals)
-        assert (
-            points.shape[0] >= 1000
-        ), f"Shard {file} has less than 1000 points: {points.shape[0]}"
 
         data = np.concatenate([points, normals], axis=1)
 
@@ -104,7 +103,6 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
         )
 
         out_file = os.path.join(output_root, folder, file)
-        # print(f"Saving {out_file}: {pc_d}")
         np.save(out_file, data)
 
     fig.update_layout(
@@ -121,6 +119,7 @@ def _downsample_and_save(folder, pc_dict, output_root, scale=2):
                 nticks=5,
                 range=[-1.5, 1.5],
             ),
+            aspectmode='cube'
         )
     )
     fig.write_html(os.path.join(output_root, folder, "scatter_plot.html"))
