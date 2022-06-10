@@ -28,6 +28,7 @@ class Extractor(object):
 		self,
 		fragment_path,
 		output_path,
+		num_ftrs,
 		keypoint_radius,
 		r_values,
 		n_keypoints,
@@ -39,6 +40,7 @@ class Extractor(object):
 	):
 		self.fragment_path = fragment_path
 		self.output_path = output_path
+		self.num_features = num_ftrs
 		self.r_vals = r_values
 		self.keypoint_radius = keypoint_radius
 		self.n_keypoints = n_keypoints
@@ -177,21 +179,25 @@ class Extractor(object):
 		for r in self.r_vals:
 			neighbourhoods[r] = tree.query_ball_point(point_cloud, r, workers=-1)
 
+			if self.num_features <= 3:
+				continue
 			# save H and deltas for ALL points
 			for p_i in tqdm(range(point_cloud.shape[0])):
+				deltas_lut[self.r_vals.index(r), p_i, :] = self.calculate_deltas(
+					neighbourhoods[r][p_i]
+				)
+				if self.num_features <=6:
+					continue
 				H_lut[self.r_vals.index(r), p_i] = self.calculate_H(
 					point_cloud[neighbourhoods[r][p_i]],
 					point_cloud[p_i],
 					normals[p_i],
 				)
-				deltas_lut[self.r_vals.index(r), p_i, :] = self.calculate_deltas(
-					neighbourhoods[r][p_i]
-				)
 		if self.plot_features:
 			self.feature_plot(H_lut, deltas_lut)
 
 		# Output
-		n_features_used = 7  # change this if you uncomment any of the rest
+		n_features_used = self.num_features
 		output_matrix = np.zeros(
 			(
 				len(keypoint_indices),
@@ -240,15 +246,22 @@ class Extractor(object):
 					cos_gamma = np.dot(p_i_normal, keypoint_normal)
 					# phi_i = np.array([cos_alpha, cos_beta, cos_gamma])
 
+					if self.num_features <= 3:
+						phi_i = [cos_alpha, cos_beta, cos_gamma]
+						Phi[:, idx] = phi_i
+						continue
 					# Compute C_p_i and delta1, delta2, delta3
 					delta1, delta2, delta3 = deltas_lut[r_idx, p_i, :]
 
+					if self.num_features <= 6:
+						phi_i = [cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3]
+						Phi[:, idx] = phi_i
+						continue
 					# Compute H
 					H = H_lut[r_idx, p_i]
 
 					# Set the value
 					phi_i = [cos_alpha, cos_beta, cos_gamma, delta1, delta2, delta3, H]
-
 					Phi[:, idx] = phi_i
 				C_r = np.cov(Phi)
 
@@ -351,13 +364,13 @@ class Extractor(object):
 
 			fig.show()
 
-def f(fragment_path, output_path, keypoint_radius, r_vals, n_keypoints, k, lbd, nms, nms_rad):
+def f(fragment_path, output_path, num_fts, keypoint_radius, r_vals, n_keypoints, k, lbd, nms, nms_rad):
 	extractor = Extractor(
-		fragment_path, output_path, keypoint_radius, r_vals, n_keypoints, k, lbd, nms, nms_rad
+		fragment_path, output_path, num_fts, keypoint_radius, r_vals, n_keypoints, k, lbd, nms, nms_rad
 	)
 	extractor.extract()
 
-def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
+def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold, num_features):
 	x_lines = []
 	y_lines = []
 	z_lines = []
@@ -368,8 +381,8 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold):
 	dist = []
 	n_matches = 0
 	for s in range(n_scales):
-		cov_m1 = np.array(extractor1.cov_mats)[:, s].reshape((n_points, 49))
-		cov_m2 = np.array(extractor2.cov_mats)[:, s].reshape((n_points, 49))
+		cov_m1 = np.array(extractor1.cov_mats)[:, s].reshape((n_points, num_features**2))
+		cov_m2 = np.array(extractor2.cov_mats)[:, s].reshape((n_points, num_features**2))
 		dist.append(spatial.distance.cdist(cov_m1, cov_m2, "euclidean"))
 	for i in range(n_points):
 		for j in range(n_points):
@@ -463,6 +476,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--mode", default=2, type=int)
 	parser.add_argument("--dataset_dir", default="Cube_dense_8_seed_0", type=str)
+	parser.add_argument("--num_features", default=3, type=int)
 	parser.add_argument("--keypoint_radius", type=float, default=0.012)
 	parser.add_argument("--n_keypoints", type=int, default=2000)
 	parser.add_argument("--r_vals", nargs="+", default=[0.02, 0.1, 0.15], type=float)
@@ -497,6 +511,7 @@ if __name__ == "__main__":
 				(
 					fragment_path,
 					output_path,
+					args.num_features,
 					args.keypoint_radius,
 					args.r_vals,
 					args.n_keypoints,
@@ -514,12 +529,12 @@ if __name__ == "__main__":
 		scales = args.r_vals
 		n_points = args.n_keypoints
 		extractor1 = Extractor(
-			args.fragment1, "temp", r, scales, n_points, args.k, args.lbd, args.nms, args.nms_rad, plot_features=False
+			args.fragment1, "temp", args.num_features, r, scales, n_points, args.k, args.lbd, args.nms, args.nms_rad, plot_features=False
 		)
 		extractor1.extract()
 		extractor2 = Extractor(
-			args.fragment2, "temp", r, scales, n_points, args.k, args.lbd, args.nms, args.nms_rad, plot_features=False
+			args.fragment2, "temp", args.num_features, r, scales, n_points, args.k, args.lbd, args.nms, args.nms_rad, plot_features=False
 		)
 		extractor2.extract()
 
-		visualize_matches(extractor2, extractor1, n_points, len(scales), args.threshold)
+		visualize_matches(extractor2, extractor1, n_points, len(scales), args.threshold, args.num_features)
