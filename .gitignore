@@ -7,3 +7,6 @@ lsf*
 *.html
 *.zip
 src/optimization/data/fragments
+
+venv
+.venv
