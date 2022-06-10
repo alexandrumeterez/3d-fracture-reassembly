@@ -1,39 +1,35 @@
-function [f_out, kp_out] = assy_3d(f,kp,kp_corr,frag_corr)
-% Description: perform 3D fragment matching and reassembly
-% Based on "main_3d_voronoi.m" (GitHub: FragRe-master) by Pablo Speciale
-% (pablo.speciale@microsoft.com) and Cui Luxiao
+function [f_out, kp_out] = assy_3d_ransac(f,kp,kp_corr,frag_corr)
+% Description: Perform 3D fragment matching and reassembly
 % Input: f (fragments), kp (keypoints), kp_corr (keypoint correlation
 % matrix), frag_corr (fragment correlation matrix)
 % Output: matching_pairwise (struct)
 % -------------------------------
-% Semester project 3D vision lecture
+% Semester project 3D Vision 2022
 % 3D Feature Point Learning for Fractured Object Reassembly
-% Team: Du Chaoyu (chaoyu.du@arch.ethz.ch)
-% Ulrich Steger (ulsteger@student.ethz.ch)
-% Eshaan Mudga (emudgal@student.ethz.ch) 
-% Florian Hürlimann (fhuerliman@student.ethz.ch)
-% Author of this code: F. Huerlimann
+% Team: Manthan Patel (patelm@student.ethz.ch)
+% Sombit Dey (somdey@student.ethz.ch)
+% Alexandru Meterez (ameterez@student.ethz.ch) 
+% Adrian Hartmann (haadrian@student.ethz.ch)
+% Author of this code: Manthan Patel
+% Inspired from original code of Florian Hürlimann
 
 % nomenclature:
 % gt = ground truth
 % rp = random pose
 % R = rotation matrix (3x3)
 % T = translation matrix (3x1)
-
+ 
 % Config
 plot_poses_flag = 0; % Plot all pairwise poses
 plot_result_flag = 1; % Plot graph, assembly
 use_ground_truth = 0; % keypoint pair selection based on ground truth
-use_rigid_transformation = 1; % enable helmert_nd()
-add_isolated_fragments = 1; % fop fragments without triple match
+learned_desc_flag = 0; % Set to 1 while using Learned descriptors
+add_isolated_fragments = 1; % add fragments without triple match
 
-% Pairwise matching config
-% Min allowable scaling factor for pose estimation
-S_bnb_min = 0.7; 
 
 % Triplewise matching config
 % Set thresholds for match (Rotation angle (RAD), Transformation)
-th_R = 1.0; th_T = 10;
+th_R = 0.2; th_T = 0.2;
 
 % Check number of fragments (fragments vs. keypoints)
 num_of_fragments = length(f);
@@ -89,8 +85,14 @@ for i = 1:size(comb_pairwise,1)
            end
         end % end loop
     else
-        %Find keypoint pairs according to feature space distance (May 28th)
-        [d_pairs,d_dist,gt_dist] = get_descriptor_pairs(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+        %Find keypoint pairs according to feature space distance 
+        if learned_desc_flag
+            % Feature matching for Learned Descriptors
+            [d_pairs,d_dist,gt_dist] = get_descriptor_pairs(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+        else
+            % Feature matching for Classical Descriptors
+            [d_pairs,d_dist,gt_dist] = get_descriptor_pairs_classical(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+        end
         A_rp_pair = [kp{comb_pairwise(i,1)}.rp.x(d_pairs(:,1)), kp{comb_pairwise(i,1)}.rp.y(d_pairs(:,1)), kp{comb_pairwise(i,1)}.rp.z(d_pairs(:,1))];
         A_gt_pair = [kp{comb_pairwise(i,1)}.gt.x(d_pairs(:,1)), kp{comb_pairwise(i,1)}.gt.y(d_pairs(:,1)), kp{comb_pairwise(i,1)}.gt.z(d_pairs(:,1))];
         B_rp_pair = [kp{comb_pairwise(i,2)}.rp.x(d_pairs(:,2)), kp{comb_pairwise(i,2)}.rp.y(d_pairs(:,2)), kp{comb_pairwise(i,2)}.rp.z(d_pairs(:,2))];
@@ -106,48 +108,53 @@ for i = 1:size(comb_pairwise,1)
     ptsA_z = double([ptsA;zcA]);
     zcB = zeros(1,size(ptsB,2)); 
     ptsB_z = double([ptsB;zcB]);
-
-    % Solve numerical optimization with YALMIP/Mosek
-    % (https://yalmip.github.io/download/)
-    % Transformation (R, T) to map pts1 to pts2 (pts1_transformed = R_bnb*ptsA+T_bnb)
-    [R_bnb, T_bnb, S_bnb, inliers_bnb, x_opt, sol_yalmip] = ...
-        computeRTSwithSDP_yalmip_bnb_3d(ptsA_z, ptsB_z);
-            
-    % Check validity of solution, save and apply transformation matrix
-    if ~isnan(T_bnb(1,1)) && ~(sum(sum(T_bnb==zeros(3)))==9) && S_bnb >= S_bnb_min
-        disp('Valid solution for T_bnb');
-        disp(['S_bnb = ', num2str(S_bnb)]); 
+    
+    if(length(A_rp_pair)>1)
         
-        % Get rigid transformation
-        if use_rigid_transformation == 1
-            [S_bnb, R_bnb, T_bnb] = helmert_nd(ptsA(:,inliers_bnb), ptsB(:,inliers_bnb), S_bnb, R_bnb, T_bnb);
+    % Transformation (R, T) to map pts1 to pts2 (pts1_transformed = R_ransac*ptsA+T_ransac)
+    [tformEst,inlierIndex, status] = estimateGeometricTransform3D(ptsA', ...
+        ptsB','rigid', MaxDistance=0.05);
+
+        R_ransac = tformEst.Rotation';
+        T_ransac = tformEst.Translation';
+        x = sum(inlierIndex==1);
+        y = size(inlierIndex, 1)-x;
+        disp("Inliers")
+        disp(x);
+        disp("Outliers")
+        disp(y);
+
+        if (x >= 5)
+            matching_pairwise{i}.transformation_A = [R_ransac T_ransac; 0 0 0 1]; 
+            nb_non_matches = nb_non_matches + 1;
+
+            % Apply transformation (R,T) to fragment A
+            ptsA_transformed = R_ransac * A_rp_pair' + T_ransac;
+            ptsA_all_transformed = R_ransac * A_rp' + T_ransac;
+
+            % Update match pairwise array
+            match_pairwise(i) = 1;
+        
+        else
+        
+            disp('No valid solution for T_ransac -> create NaN R, T');
+            R_ransac = NaN(3,3);
+            T_ransac = NaN(3,1);
+            matching_pairwise{i}.transformation_A = [R_ransac T_ransac; 0 0 0 1]; 
+            nb_non_matches = nb_non_matches + 1;
+
         end
         
-        matching_pairwise{i}.transformation_A = [R_bnb T_bnb; 0 0 0 1]; 
-        nb_non_matches = nb_non_matches + 1;
-        
-        % Apply transformation (R,T) to fragment A
-        ptsA_transformed = R_bnb * A_rp_pair' + T_bnb;
-        ptsA_all_transformed = R_bnb * A_rp' + T_bnb;
-        
-        % Update match pairwise array
-        match_pairwise(i) = 1;
-        
-        % Check affinity of rotation matrix
-        check_R(R_bnb);
-        
     else
-        disp('No valid solution for T_bnb -> create NaN R, T');
-        R_bnb = NaN(3,3);
-        T_bnb = NaN(3,1);
-        %disp('No valid solution for T_bnb -> create random T');
-        %T_bnb = 1000*rand(3,1);
-        matching_pairwise{i}.transformation_A = [R_bnb T_bnb; 0 0 0 1]; 
+        disp('No valid solution for T_ransac -> create NaN R, T');
+        R_ransac = NaN(3,3);
+        T_ransac = NaN(3,1);
+        matching_pairwise{i}.transformation_A = [R_ransac T_ransac; 0 0 0 1]; 
         nb_non_matches = nb_non_matches + 1;
+           
     end
         
     % Plot random pose keypoints
-    %if (plot_poses_flag == 1 && ~isnan(T_bnb(1,1)))
     if plot_poses_flag == 1
         fig.f = figure;
         set(gcf,'color','w');
@@ -161,7 +168,7 @@ for i = 1:size(comb_pairwise,1)
         title('Random pose');
         
         % Plot only if pose estimation successful
-        if ~isnan(T_bnb(1,1))
+        if ~isnan(T_ransac(1,1))
             fig.sub3 = subplot(1,3,3);
             subplot_keypoints([1,3,3],comb_pairwise,i,ptsA_all_transformed',B_rp,ptsA_transformed',B_rp_pair);
             title('Random pose transformed');
@@ -219,8 +226,16 @@ disp(['Combination ', num2str(i), '/', num2str(size(comb_pairwise,1)), ' | Loop 
            end
         end
     else
-        % Find keypoint pairs according to feature space distance (May 28th)
-        [d_pairs,d_dist] = get_descriptor_pairs(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+       
+        %Find keypoint pairs according to feature space distance 
+        if learned_desc_flag
+            % Feature matching for Learned Descriptors
+            [d_pairs,d_dist,gt_dist] = get_descriptor_pairs(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+        else
+            % Feature matching for Classical Descriptors
+            [d_pairs,d_dist,gt_dist] = get_descriptor_pairs_classical(kp, comb_pairwise(i,1), comb_pairwise(i,2));
+        end
+        
         A_rp_pair = [kp{comb_pairwise(i,2)}.rp.x(d_pairs(:,2)), kp{comb_pairwise(i,2)}.rp.y(d_pairs(:,2)), kp{comb_pairwise(i,2)}.rp.z(d_pairs(:,2))];
         A_gt_pair = [kp{comb_pairwise(i,2)}.gt.x(d_pairs(:,2)), kp{comb_pairwise(i,2)}.gt.y(d_pairs(:,2)), kp{comb_pairwise(i,2)}.gt.z(d_pairs(:,2))];
         B_rp_pair = [kp{comb_pairwise(i,1)}.rp.x(d_pairs(:,1)), kp{comb_pairwise(i,1)}.rp.y(d_pairs(:,1)), kp{comb_pairwise(i,1)}.rp.z(d_pairs(:,1))];
@@ -237,47 +252,58 @@ disp(['Combination ', num2str(i), '/', num2str(size(comb_pairwise,1)), ' | Loop 
     zcB = zeros(1,size(ptsB,2)); 
     ptsB_z = double([ptsB;zcB]);
 
-    % Solve numerical optimization with YALMIP/Mosek
-    % (https://yalmip.github.io/download/)
-    % Transformation (R, T) to map pts1 to pts2 (pts1_transformed = R_bnb*ptsA+T_bnb)
-    [R_bnb, T_bnb, S_bnb, inliers_bnb, x_opt, sol_yalmip] = ...
-        computeRTSwithSDP_yalmip_bnb_3d(ptsA_z, ptsB_z);
+    % Transformation (R, T) to map pts1 to pts2 (pts1_transformed = R_ransac*ptsA+T_ransac)
+     if(length(A_rp_pair)>1)
+         
+        [tformEst,inlierIndex, status] = estimateGeometricTransform3D(ptsA', ...
+            ptsB','rigid', MaxDistance=0.05);
         
-    % Check validity of solution, save and apply transformation matrix
-    %if ~isnan(T_bnb(1,1)) && ~(sum(sum(T_bnb==zeros(3)))==9) && (abs(S_bnb-1.0) <= 0.3)
-    if ~isnan(T_bnb(1,1)) && ~(sum(sum(T_bnb==zeros(3)))==9) && S_bnb >= S_bnb_min
-        disp('Valid solution for T_bnb');
-        disp(['S_bnb = ', num2str(S_bnb)]); 
+        R_ransac = tformEst.Rotation';
+        T_ransac = tformEst.Translation';
+        x = sum(inlierIndex==1);
+        y = size(inlierIndex, 1)-x;
+        disp("Inliers")
+        disp(x);
+        disp("Outliers")
+        disp(y);
         
-        % Get rigid transformation
-        if use_rigid_transformation == 1
-            [S_bnb, R_bnb, T_bnb] = helmert_nd(ptsA(:,inliers_bnb), ptsB(:,inliers_bnb), S_bnb, R_bnb, T_bnb);
-        end
+    if(sum(inlierIndex==1)>=5)
+        disp('Valid solution for T_ransac');
         
-        matching_pairwise{i}.transformation_B = [R_bnb T_bnb; 0 0 0 1]; 
+        matching_pairwise{i}.transformation_B = [R_ransac T_ransac; 0 0 0 1]; 
         nb_non_matches = nb_non_matches + 1;
         
         % Apply transformation (R,T) to fragment A
-        ptsA_transformed = R_bnb * A_rp_pair' + T_bnb;
-        ptsA_all_transformed = R_bnb * A_rp' + T_bnb;    
+        ptsA_transformed = R_ransac * A_rp_pair' + T_ransac;
+        ptsA_all_transformed = R_ransac * A_rp' + T_ransac;    
         
         % Update match pairwise array
         match_pairwise(i) = 1;
         
-        % Check affinity of rotation matrix
-        check_R(R_bnb);
     else
-        disp('No valid solution for T_bnb -> create NaN R, T');
-        R_bnb = NaN(3,3);
-        T_bnb = NaN(3,1);
-        %disp('No valid solution for T_bnb -> create random T');
-        %T_bnb = 1000*rand(3,1);
-        matching_pairwise{i}.transformation_B = [R_bnb T_bnb; 0 0 0 1]; 
+        disp('No valid solution for T_ransac -> create NaN R, T');
+        R_ransac = NaN(3,3);
+        T_ransac = NaN(3,1);
+        %disp('No valid solution for T_ransac -> create random T');
+        %T_ransac = 1000*rand(3,1);
+        matching_pairwise{i}.transformation_B = [R_ransac T_ransac; 0 0 0 1]; 
         nb_non_matches = nb_non_matches + 1;
-    end
+     end
+       
+     else
+        disp('No valid solution for T_ransac -> create NaN R, T');
+        R_ransac = NaN(3,3);
+        T_ransac = NaN(3,1);
+        %disp('No valid solution for T_ransac -> create random T');
+        %T_ransac = 1000*rand(3,1);
+        matching_pairwise{i}.transformation_B = [R_ransac T_ransac; 0 0 0 1]; 
+        nb_non_matches = nb_non_matches + 1;
+         
+     end
+
         
     % Plot random pose keypoints
-    %if (plot_poses_flag == 1 && ~isnan(T_bnb(1,1)))
+    %if (plot_poses_flag == 1 && ~isnan(T_ransac(1,1)))
     if plot_poses_flag == 1
         fig.f = figure;
         set(gcf,'color','w');
@@ -291,7 +317,7 @@ disp(['Combination ', num2str(i), '/', num2str(size(comb_pairwise,1)), ' | Loop 
         title('Random pose');
         
         % Plot only if pose estimation successful
-        if ~isnan(T_bnb(1,1))
+        if ~isnan(T_ransac(1,1))
             fig.sub3 = subplot(1,3,3);
             subplot_keypoints([1,3,3],comb_pairwise,i,ptsA_all_transformed',B_rp,ptsA_transformed',B_rp_pair);
             title('Random pose transformed');
@@ -318,27 +344,27 @@ disp([comb_pairwise, match_pairwise]);
 %% Verify that pairwise match results in 2 transformation matrices A, B
 % (e.g. frag2 = A*frag1, frag1 = B*frag2)
 % If one is missing, substitute with inverse transformation matrix of other
-disp('Checking for missing transformation matrices');
+% disp('Checking for missing transformation matrices');
 
 % Loop through pairwise combinations
 for k=1:length(match_pairwise)
     if match_pairwise(k) == 1 % match
-        disp('------');
-        disp(['match_pairwise(',num2str(k),')']);
+%         disp('------');
+%         disp(['match_pairwise(',num2str(k),')']);
         A_isnan = sum(sum(isnan(matching_pairwise{k}.transformation_A)));
         B_isnan = sum(sum(isnan(matching_pairwise{k}.transformation_B)));
         
         if (A_isnan == 0 && B_isnan == 0) % A, B OK (not NaN)
-            disp('A, B OK (not NaN)');
+%             disp('A, B OK (not NaN)');
         end
         
         if (A_isnan == 0 && B_isnan > 0) % B is missing
-            disp('B is emtpy. Replacing with inverse of A');
+%             disp('B is emtpy. Replacing with inverse of A');
             matching_pairwise{k}.transformation_B = matching_pairwise{k}.transformation_A^-1;
         end
         
         if (A_isnan > 0 && B_isnan == 0) % A is missing
-             disp('A is emtpy. Replacing with inverse of B');
+%              disp('A is emtpy. Replacing with inverse of B');
             matching_pairwise{k}.transformation_A = matching_pairwise{k}.transformation_B^-1;
         end
        
@@ -395,9 +421,9 @@ disp(['Number of triplewise matching constraints == 1: ', num2str(sum(sum(constr
 %% Discovery of spatial adjacent fragments
 adjacency_pairs = [];
 for i=1:size(comb_pairwise,1)
-   if (match_triplewise(i) == 1)
+     if (match_triplewise(i) == 1)
         adjacency_pairs = [adjacency_pairs; comb_pairwise(i,:)]; 
-   end
+     end
 end
 disp(['number of adjacency pairs: ', num2str(size(adjacency_pairs,1))]);
 
@@ -457,19 +483,19 @@ if add_isolated_fragments == 1
     end % end loop
     
     % Simplify graph (remove redundant edges)
-    G = simplify(G);
+%     G = simplify(G);
 end % end if
 
 
 %% Plot graph
-figure(7); h = plot(G,'MarkerSize',8); h.NodeColor = 'red';
+figure(7); h = plot(G,'MarkerSize',10); h.NodeColor = 'red';
 set(gcf,'color','w');
-title('Fragment adjacency graph');
+title('Fragment Adjacency Graph');
 nl = h.NodeLabel;
 h.NodeLabel = '';
 xd = get(h, 'XData')+0.06;
 yd = get(h, 'YData');
-text(xd, yd, nl,'FontSize',12,'FontWeight','bold', 'HorizontalAlignment','left');
+text(xd, yd, nl,'FontSize',18,'FontWeight','bold', 'HorizontalAlignment','left');
 
 %% Init new (reassembled) fragments
 for i=1:length(f)
@@ -603,7 +629,7 @@ if plot_result_flag == 1
     % change from f to kp to plot keypoints
     figure;
     set(gcf,'color','w');
-    title('Assembled fragments');
+    title('Assembled Fragments');
     for i=1:length(f)
         plot_3d(f,i,my_colors{i},'assy'); 
     end
@@ -631,8 +657,8 @@ f_out = f;
 kp_out = kp;
 
 %% save workspace
-save workspace_assy_3d.mat;
-save('cube_6_f_kp.mat','f','kp');
+% save workspace_assy_3d.mat;
+% save('cube_6_f_kp.mat','f','kp');
 
 % End main
 end

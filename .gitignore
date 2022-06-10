@@ -6,3 +6,4 @@ lsf*
 *.npy
 *.html
 *.zip
+src/optimization/data/fragments

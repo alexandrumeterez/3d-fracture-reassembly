@@ -1,6 +1,7 @@
-function [d_pairs,d_dist,gt_dist] = get_descriptor_pairs(kp, index1, index2)
+function [d_pairs,d_dist,gt_dist] = get_descriptor_pairs_classical(kp, index1, index2)
 % Find pairs of keypoints of two fragments with similar descriptors 
 % Input: kp (keypoints struct), index fragment1, index fragment2
+
 
 % Prepare output
 d_pairs = [];
@@ -8,18 +9,31 @@ d_dist = [];
 gt_dist = [];
 
 % Config
-max_pairs = 50;
-max_d = 0.2; %Threshold value. Pairs with d>max_d will be discarded
+max_pairs = 30;
+%Threshold value. Pairs with d>max_d will be discarded
+%Use 0.5 for experiments with Noise. For noise-free datasets use 0.2
+max_d = 0.5;
+% Parameters for Descriptor
+desc_features = 3; %No of geometric features (3 or 7)
+desc_scales = 5; %(No of radii (multi-scale))
+% Use 3 and 5 for all sample datasets provided or set them according to the
+% params used in keypoint extraction
 
-features1 = kp{index1}.rp.features;
-features2 = kp{index2}.rp.features;
+desc_mat_sz = desc_features*desc_features;
 
-% Sort keypoints by distance in feature space
-if length(features2) <= length(features1)
-    [D,I] = pdist2(features1, features2, 'euclidean', 'Smallest',1);
-else
-    [D,I] = pdist2(features2, features1, 'euclidean', 'Smallest',1);
+X = kp{index1}.gt.features;
+Y = kp{index2}.gt.features;
+
+%Multi-scale average of Frobenius Norm
+
+k = 1;
+D = pdist2(Y(:,(k-1)*desc_mat_sz +1:k*desc_mat_sz), X(:,(k-1)*desc_mat_sz +1:k*desc_mat_sz), 'euclidean');
+
+for k=2:desc_scales
+    D = D + pdist2(Y(:,(k-1)*desc_mat_sz +1:k*desc_mat_sz), X(:,(k-1)*desc_mat_sz +1:k*desc_mat_sz), 'euclidean');
 end
+    D = D/desc_scales;
+    [D, I] = min(D, [], 1);
 
 % Create array with point ID1, ID2, distance
 Array(:,1) = 1:length(I);
@@ -39,6 +53,7 @@ Array = Array(filter,:);
 % Prepare output
 d_pairs = Array(:,1:2);
 d_dist = Array(:,3);
+gt_dist = zeros(size(Array,1),1)';
 
 % Calculate ground truth distance
 for k=1:length(d_dist)

@@ -1,7 +1,9 @@
-function [f,kp,ft] = import_3d
+function [f,kp] = import_3d_classical
 % Descripton: Import fragment, keypoints 3D clouds, feature descriptors
-% Output: f (fragments), kp (keypoints), feature descriptors (ft)
+% Output: f (fragments), kp (keypoints + Descriptors)
 % -------------------------------
+% Semester project 3D vision lecture
+% 3D Feature Point Learning for Fractured Object Reassembly
 % Semester project 3D Vision 2022
 % 3D Feature Point Learning for Fractured Object Reassembly
 % Team: Manthan Patel (patelm@student.ethz.ch)
@@ -9,7 +11,6 @@ function [f,kp,ft] = import_3d
 % Alexandru Meterez (ameterez@student.ethz.ch) 
 % Adrian Hartmann (haadrian@student.ethz.ch)
 % Author of this code: Manthan Patel
-% Original Code author: Florian Hürlimann
 
 % nomenclature:
 % gt = ground truth
@@ -18,13 +19,45 @@ function [f,kp,ft] = import_3d
 % T = translation matrix (3x1)
 
 % Config
-% ------
 
-% Learned Descriptors Datasets
-% Cube trial (3d scan)
-data_dir_fragment = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/'; % fragment *.npy directory
-data_dir_kp = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/keypoints'; % keypoint *.npy directory
-data_dir_ft = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/encoded'; % features *.npy directory
+%%%%% Noise Expts
+
+data_dir_fragment = 'data/fragments/Cube_Noise_expts/Cube_dense_8_seed_0'; % fragment *.npy directory
+data_dir_kp = 'data/fragments/Cube_Noise_expts/Cube_dense_8_seed_0/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.0001'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.0001/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.0005'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.0005/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.001'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.001/keypoints'; % keypoint + descriptor *.npy directory
+ 
+% data_dir_fragment = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.002'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Cube_Noise_expts/Cube_8_seed_0_0.002/keypoints'; % keypoint + descriptor *.npy directory
+
+%%%%% Classical Features Experiments (Icosphere and Cone)
+
+% data_dir_fragment = 'data/fragments/icosphere_dense_8_seed_0_0.001'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/icosphere_dense_8_seed_0_0.001/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/cone_dense_8_seed_0_0.001'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/cone_dense_8_seed_0_0.001/keypoints'; % keypoint + descriptor *.npy directory
+
+%%%%% Keypoint Quality experiments (Use Groundtruth Matching for establishing correspondences)
+
+% data_dir_fragment = 'data/fragments/Brick_2'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Brick_2/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Cake2'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Cake2/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Gargoyle2'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Gargoyle2/keypoints'; % keypoint + descriptor *.npy directory
+
+% data_dir_fragment = 'data/fragments/Head2'; % fragment *.npy directory
+% data_dir_kp = 'data/fragments/Head2/keypoints'; % keypoint + descriptor *.npy directory
 
 rng(0); % Initialize random seed for reproducibility
 max_rotation = pi; % Max angle (rad) for random pose
@@ -61,14 +94,6 @@ for k=1:length(d)
 end
 cd(old_dir);
 
-% Get filenames of features files
-new_dir = fullfile(old_dir, data_dir_ft);
-cd(new_dir);
-d = dir('*.npy');
-for k=1:length(d)
-    ft{k}.filename = d(k).name;
-end
-cd(old_dir);
 
 if length(f)~=length(kp) 
     error('unequal number of fragments.');
@@ -115,7 +140,7 @@ for k=1:length(kp)
     disp(['Import ', fullfile(data_dir_kp, kp{k}.filename)]);
     npy = readNPY(fullfile(data_dir_kp, kp{k}.filename));
     
-    % Store point coordinate, sigma (saliency) in ground truth (gt) struct
+    % Store point coordinate in ground truth (gt) struct
     kp{k}.gt.x = npy(:,1);
     kp{k}.gt.y = npy(:,2);
     kp{k}.gt.z = npy(:,3);
@@ -139,13 +164,13 @@ end
 % ------------------
 disp('---');
 disp('Importing features ...');
-disp(['Directory: ',data_dir_ft]);
-for k=1:length(ft)
-    disp(['Import ', fullfile(data_dir_ft, ft{k}.filename)]);
-    npy = readNPY(fullfile(data_dir_ft, ft{k}.filename));
+disp(['Directory: ',data_dir_kp]);
+for k=1:length(kp)
+    disp(['Import ', fullfile(data_dir_kp, kp{k}.filename)]);
+    npy = readNPY(fullfile(data_dir_kp, kp{k}.filename));
     
     if size(npy,1) == length(kp{k}.gt.x)
-        kp{k}.gt.features = npy;
+        kp{k}.gt.features = npy(:,7:end);
     else
         error('Number of keypoints does not match number of features.');
     end
@@ -206,8 +231,7 @@ for k=1:length(f)
     kp{k}.rp.y_mean = mean(kp{k}.rp.y);
     kp{k}.rp.z_mean = mean(kp{k}.rp.z);
     
-%     Add features
-    kp{k}.rp.features = kp{k}.gt.features;
+
 end
 
 
@@ -278,5 +302,4 @@ if plot_flag == true
     hold off;
 end
 
-% End main function
 end
