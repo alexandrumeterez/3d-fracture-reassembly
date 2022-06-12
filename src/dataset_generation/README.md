@@ -22,3 +22,13 @@ The general precedure is as follows:
 3. Run `open3d_resample.py` to downsample the obj files and save them into .npy numpy files. It will also output a .html Plotly scatter plot for easy verification of the data.
 
 More detailed instructions of paths and folder structures are located inside each file.
+
+## Surface segmentation
+
+`/surface_segmentation` contains code for labeling the surface of shards. It is not used in the pipeline, but still provided for completeness.
+
+### Usage
+- Install the pcl library, i.e. `apt-get install libpcl-dev`
+- build the Cmake project: `mkdir build && cd build && cmake .. && make`
+- Run `./visualize` for a simple visualization test of the provided fragments
+- Run `./regions` to visualize and save the segmented fragments
