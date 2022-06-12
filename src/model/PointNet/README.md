@@ -16,6 +16,7 @@ Use the environment.yml file in the conda environment
 conda env create -f environment.yml
 ```
 ## Dataset format required : 
+The dataset format for triplet_train.py is given below. 
 
 - Data 
    - train
@@ -53,6 +54,7 @@ Parameters:
 - PC_train absolute dataset path 
 - epochs, margin, r_recalculate 
 
+***
 
 ## Steps for complete train:  
 The complete_train pipeline is written with test_train split. The requried data format is given below.
