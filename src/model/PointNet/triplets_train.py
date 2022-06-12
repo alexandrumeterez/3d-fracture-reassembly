@@ -18,7 +18,7 @@ from tqdm import tqdm
 import provider
 import numpy as np
 import pdb
-from torchsummary import summary
+# from torchsummary import summary
 from get_neighbors import get_nbrs, get_weights, ensure_dir
 import os
 import torch
@@ -34,8 +34,8 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-PC_PATH_train = "/home/sombit/object_inv/train"
-PC_PATH_val = "/home/sombit/object_inv/val"
+PC_PATH_train = "/home/sombit/dataset/train1"
+PC_PATH_val = "/home/sombit/dataset/val1"
 # PC_PATH_test = "/home/sombit/object_inv/test"
 
 
@@ -146,25 +146,25 @@ class NeuralNetwork(nn.Module):
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
             nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
+            # nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-                        nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),            nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),            nn.Linear(128, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Linear(128, 128)
+            # # nn.BatchNorm1d(128),
+            # nn.ReLU(),
+            # nn.Linear(128, 128),
+            # # nn.BatchNorm1d(128),
+            # nn.ReLU(),            nn.Linear(128, 128),
+            # # nn.BatchNorm1d(128),
+            # nn.ReLU(),            nn.Linear(128, 128),
+            # # nn.BatchNorm1d(128),
+            # nn.ReLU(),
+            # nn.Linear(128, 128)
 
         )   
-        self.layer = nn.Sequential(nn.Linear(256,128),nn.ReLU())
+        self.layer = nn.Sequential(nn.Linear(128,128),nn.ReLU())
         # self.layer_norm = F.normalize(x, dim = 0)
 
 
@@ -221,22 +221,23 @@ features_folder = 'features'
 triplets_folder = 'triplets'
 encoded_folder = 'encoded'
 
-def generate_new_trips(dataset_path):
+def generate_new_trips(dataset_path,net):
+    net = net.eval()
     object_type =os.listdir(dataset_path)
         # print(object_t)
     for object in object_type:
         obj_pc_dir = os.path.join(dataset_path,object)
-        obj_feature_dir = os.path.join(obj_pc_dir,encoded_folder)
+        obj_feature_dir = os.path.join(obj_pc_dir,features_folder)
         obj_triplet_dir = os.path.join(obj_pc_dir,triplets_folder)
 
         pc_files= sorted(glob.glob(obj_pc_dir+"/*.npy"))
         keypoint_path = os.path.join(obj_pc_dir,keypoints_folder)
         kp_files= sorted(glob.glob(os.path.join(keypoint_path+"/*.npy")))
-        desc_path = os.path.join(obj_pc_dir,encoded_folder)
+        desc_path = os.path.join(obj_pc_dir,features_folder)
 
         desc_files = sorted(glob.glob(desc_path+"/*.npy"))
         # print("get new trips",kp_files[0], desc_files[0])
-        generate_triplets(kp_files, desc_files, obj_triplet_dir,positive_rad=0.001,negative_rad=0.04)
+        generate_triplets(kp_files, desc_files, obj_triplet_dir,net,positive_rad=0.001,negative_rad=0.0011)
 
 def get_achor_pos():
 
@@ -264,18 +265,18 @@ def get_achor_pos():
 if __name__ == "__main__" :
 
 
-    num_epoches = 40
+    num_epoches = 100
     net=NeuralNetwork()
     # if torch.cuda.is_available() :
     #     net = net.cuda()
     net.cuda()
    
-    optimizer = torch.optim.AdamW(net.parameters(), lr = 0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01, amsgrad=False)
+    optimizer = torch.optim.AdamW(net.parameters(), lr = 0.0001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.01, amsgrad=False)
     scheduler = ExponentialLR(optimizer, gamma=0.99)
-    triplet_loss = nn.TripletMarginLoss(margin=0.15)
+    triplet_loss = nn.TripletMarginLoss(margin=0.4)
     train_now = True
     test_now = True
-    batch_size  = 2
+    batch_size  = 200
     l_his=[]
     best = 100.0
     net = net.float()
@@ -285,10 +286,10 @@ if __name__ == "__main__" :
     print("loading data")
     pc_data = dataset_pc(PC_PATH_train)
     train_dataloader = DataLoader(pc_data, batch_size=batch_size,
-                        shuffle=False, num_workers= 5)
+                        shuffle=True, num_workers= 5)
     pc_data_val = dataset_pc(PC_PATH_val)
     val_dataloader = DataLoader(pc_data_val, batch_size=batch_size,
-                        shuffle=False, num_workers= 5)    
+                        shuffle=True, num_workers= 5)    
     # pc_data_test = dataset_pc(PC_PATH_test)
     # test_dataloader = DataLoader(pc_data_test, batch_size=100,
     #                     shuffle=True, num_workers= 2)                                        
@@ -321,8 +322,7 @@ if __name__ == "__main__" :
                 # enc_p = net(torch.Tensor(positive).cuda())
                 # enc_n = net(torch.Tensor(negative).cuda())
                 # print(i_batch)
-                if(i_batch == 0):
-                    print(torch.norm(batch['positive']-batch['anchor'] ), torch.norm(batch['anchor'] - batch['negative']))
+
                 enc_a = net(batch['anchor'].float().cuda())
                 enc_p = net(batch['positive'].float().cuda())
                 enc_n = net(batch['negative'].float().cuda())
@@ -370,16 +370,16 @@ if __name__ == "__main__" :
             if(running_loss_val/len(val_dataloader) <=best):
                 torch.save(net.state_dict(), 'triplet_model_best.pth')
                 best = running_loss/len(train_dataloader)
-            if(epoch%4==3):
+            if(epoch %5 ==4):
                 save_encoded(PC_PATH_train,features_folder,encoded_folder)
                 save_encoded(PC_PATH_val,features_folder,encoded_folder)
-                generate_new_trips(PC_PATH_train)
-                generate_new_trips(PC_PATH_val)
+                generate_new_trips(PC_PATH_train,net)
+                generate_new_trips(PC_PATH_val,net)
                 # save_encoded(features_folder_inv,encoded_folder_inv)
                 pc_data = dataset_pc(PC_PATH_train)
-                train_dataloader = DataLoader(pc_data, batch_size=batch_size,shuffle=False, num_workers=5)
+                train_dataloader = DataLoader(pc_data, batch_size=batch_size,shuffle=True, num_workers=5)
                 pc_data = dataset_pc(PC_PATH_val)
-                val_dataloader = DataLoader(pc_data, batch_size=batch_size,shuffle=False, num_workers=5)
+                val_dataloader = DataLoader(pc_data, batch_size=batch_size,shuffle=True, num_workers=5)
 
                     # anchor,positive,negative,kps = get_achor_pos()
                     # kps = torch.from_numpy(kps).float().cuda()
@@ -392,11 +392,12 @@ if __name__ == "__main__" :
 
         print('Finished Training')
         torch.save(net.state_dict(), 'triplet_model.pth')
-        fig = plt.figure()
-        ax = plt.subplot(111)
-        ax.plot(loss_hist["train"], label="train")
-        ax.plot(loss_hist["val"], label="val")
+        np.save("data_final1",np.array(loss_hist))
+        # fig = plt.figure()
+        # ax = plt.subplot(111)
+        # ax.plot(loss_hist["train"], label="train")
+        # ax.plot(loss_hist["val"], label="val")
         
-        plt.xlabel('Steps')
-        plt.ylabel('Loss')
-        fig.savefig('loss_plot.png')
+        # plt.xlabel('Steps')
+        # plt.ylabel('Loss')
+        # fig.savefig('loss_plot1.png')

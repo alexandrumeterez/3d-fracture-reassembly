@@ -52,15 +52,15 @@ def encode_descriptor(desc_files, obj_encoded_desc_dir, net):
 #     names.append(f'cylinder_20_seed_{i}')
 
 
-KEYPOINT_PATH = "./data/keypoints/keypoints_2/keypoints_2/"
-DESC_PATH = "./data/keypoints/features/"
-TRIPLET_PATH = "./data/keypoints/triplets/"
-ENCODED_DESC = "./data/keypoints/encoded_desc/"
+KEYPOINT_PATH = "/home/sombit/dataset/Cube_8_seed_0/keypoints_2/"
+DESC_PATH = "/home/sombit/dataset/Cube_8_seed_0/features/"
+TRIPLET_PATH = "/home/sombit/dataset/Cube_8_seed_0/"
+ENCODED_DESC = "/home/sombit/dataset/Cube_8_seed_0/"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using {} device'.format(device))
 net = NeuralNetwork().to(device)
-net.load_state_dict(torch.load('triplet_model_cls_cube_best.pth'))
+net.load_state_dict(torch.load('triplet_model_best.pth'))
 net.eval()
 print(net)
 
@@ -76,7 +76,7 @@ print(net)
 #     # print(desc_files)
 #     ensure_dir(obj_encoded_desc_dir)
 #     encode_descriptors(desc_files, obj_encoded_desc_dir, net)
-PC_PATH = "/home/sombit/object_test/" 
+PC_PATH = "/home/sombit/dataset/train1" 
 object_type =os.listdir(PC_PATH)
 if __name__ == '__main__':
     for object_t in object_type:
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         for object_ in objects:
             obj_pc_dir = os.path.join(object_t_dir,object_)
             obj_triplet_dir = os.path.join(obj_pc_dir,"triplets_cls")
-            obj_enc_dir = os.path.join(obj_pc_dir,"encoded_cls")
+            obj_enc_dir = os.path.join(obj_pc_dir,"encoded")
             
             # pc_files= sorted(glob.glob(obj_pc_dir+"/*.npy"))
             # KEYPOINT_PATH = os.path.join(obj_pc_dir,'keypoints')
@@ -98,8 +98,8 @@ if __name__ == '__main__':
 
             desc_files = sorted(glob.glob(DESC_PATH+"/*.npy"))
             encode_descriptor(desc_files, obj_enc_dir, net)
-            break
-        break
+        #     break
+        # break
 
         # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
         # triplet_path = os.path.join(obj_pc_dir,'triplets')

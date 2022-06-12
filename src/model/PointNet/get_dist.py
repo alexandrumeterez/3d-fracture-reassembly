@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-whitegrid')
 import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PC_PATH = "/home/sombit/object_inv/" 
+PC_PATH = "/home/sombit/dataset/train1" 
 from tqdm import tqdm
 # triplet_files = []
 # for name in names[:2]:
@@ -109,16 +109,36 @@ def get_matr(kp,desc_files):
     # for f_kp in desc_files:            
          
     
-for object_t in object_type:
-    print(object_t)
-    object_t_dir = os.path.join(PC_PATH,object_t)
-    objects = os.listdir(object_t_dir)
-    # kp_files_total = []
-    # desc_files_total = []
-    for object_ in objects:
-        obj_pc_dir = os.path.join(object_t_dir,object_)
-        obj_triplet_dir = os.path.join(obj_pc_dir,"triplets")
+# for object_t in object_type:
+#     print(object_t)
+#     object_t_dir = os.path.join(PC_PATH,object_t)
+#     objects = os.listdir(object_t_dir)
+#     # kp_files_total = []
+#     # desc_files_total = []
+#     for object_ in objects:
+#         obj_pc_dir = os.path.join(object_t_dir,object_)
+#         # obj_triplet_dir = os.path.join(obj_pc_dir,"triplets")
+#         pc_files= sorted(glob.glob(obj_pc_dir+"/*.npy"))
+#         print(obj_pc_dir)
+#         KEYPOINT_PATH = os.path.join(obj_pc_dir,'keypoints')
+#         # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
+#         # kp_files= sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy")))
+#         kp_files= sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy")))
+#         print(kp_files)
+#         # kp_files_total.append(kp_files)
+
+#         DESC_PATH = os.path.join(obj_pc_dir,'encoded')
+#         desc_files = sorted(glob.glob(DESC_PATH+"/*.npy"))
+#         # desc_files_total.append(desc_files_total)
+#         # get_matr(kp_files,desc_files)
+#         break
+#     break
+objects = os.listdir(PC_PATH)
+for object_ in objects:
+        obj_pc_dir = os.path.join(PC_PATH,object_)
+        # obj_triplet_dir = os.path.join(obj_pc_dir,"triplets")
         pc_files= sorted(glob.glob(obj_pc_dir+"/*.npy"))
+        print(obj_pc_dir)
         KEYPOINT_PATH = os.path.join(obj_pc_dir,'keypoints')
         # KEYPOINT_PATH = os.path.join(KEYPOINT_PATH,os.listdir(KEYPOINT_PATH)[0])
         # kp_files= sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy")))
@@ -126,15 +146,14 @@ for object_t in object_type:
         print(kp_files)
         # kp_files_total.append(kp_files)
 
-        DESC_PATH = os.path.join(obj_pc_dir,'encoded')
+        DESC_PATH = os.path.join(obj_pc_dir,'features')
         desc_files = sorted(glob.glob(DESC_PATH+"/*.npy"))
+        break
+    # break
         # desc_files_total.append(desc_files_total)
         # get_matr(kp_files,desc_files)
-        break
-    break
-
-i = 6
-j =2
+i = 0
+j =1
 n_points  = 512
 colors1 = ['blue' for _ in range(n_points)]
 colors2 = ['blue' for _ in range(n_points)]

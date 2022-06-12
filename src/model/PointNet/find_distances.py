@@ -11,6 +11,7 @@ import pdb
 import glob
 import os
 from pathlib import Path
+import torch
 
 
 
@@ -40,10 +41,13 @@ def negative_sample(dist,f_dist, min_dist, min_idx):
     return neg_dist, neg_idx
 
 def positive_abs(dist,positive_rad):
+    # print("dist",dist,dist.shape)
     min_dist = np.min(dist, axis=1)
+    # print("min_dist",min_dist,min_dist.shape)
     idx = np.where(min_dist<positive_rad)
+    # print("idx",idx,idx[0].shape)
     min_idx = np.argmin(dist, axis=1)
-    # print(min_idx[idx])
+    # print(min_idx)
     return min_dist[idx], min_idx[idx], idx
 
 def negative_abs(dist,f_dist, min_dist, min_idx, idx,negative_rad):
@@ -65,11 +69,12 @@ def store_triplet(anc, pos, neg, obj_triplet_dir, kp_file):
     file_name = os.path.join(obj_triplet_dir,file[:-4])
     np.savez(file_name, anchor=anc, positive=pos, negative = neg)
 
-def generate_triplets(kp_files, desc_files, obj_triplet_dir,positive_rad,negative_rad):
+def generate_triplets(kp_files, desc_files, obj_triplet_dir,net,positive_rad,negative_rad):
     for i in range(len(kp_files)):
 
         ## file name for fragment processed
         frag = kp_files[i]
+        # print(desc_files)
         desc = desc_files[i]
         # frag_inv = kp_files[i]
         # desc_inv = desc_files[i]
@@ -99,7 +104,7 @@ def generate_triplets(kp_files, desc_files, obj_triplet_dir,positive_rad,negativ
         ## compute distance between key points of frament i
         ## and the rest of the fragments
         dist = cdist(frag_kp[:,:3], other_kp[:,:3]) ## don't use sigma for distance calc
-        f_dist = cdist(frag_desc[:,:], other_descs[:,:])
+        f_dist = cdist(net(torch.Tensor(frag_desc[:,:]).cuda()).detach().cpu().numpy(), net(torch.Tensor(other_descs[:,:]).cuda()).detach().cpu().numpy())
         # if REL_DIST == 1:
         #     min_dist, min_idx = positive_example(dist)  ## find index for positive  pairs
         #     neg_dist, neg_idx = negative_sample(dist, f_dist, min_dist, min_idx)    ## find index for negative pairs
@@ -112,6 +117,7 @@ def generate_triplets(kp_files, desc_files, obj_triplet_dir,positive_rad,negativ
         ## negative descriptors
 
         anchor = frag_desc[idx]
+
         positive_desc = other_descs[min_idx]
         negative_desc = other_descs[neg_idx]
         # print(np.linalg.norm(frag_kp[idx][11,:3]-other_kp[min_idx][11,:3]))
