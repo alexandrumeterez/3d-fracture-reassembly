@@ -16,8 +16,8 @@ Use the environment.yml file in the conda environment
 conda env create -f environment.yml
 ```
 ## Dataset format required : 
-The dataset format for triplet_train.py is given below. 
-
+The dataset format for triplet_train.py is given below. <br>
+Sample dataset with features https://drive.google.com/drive/folders/1hvLwhv-7yK5eBSL8z3WQLFZ1KLmY6UMj?usp=sharing
 - Data 
    - train
        - obj1 
