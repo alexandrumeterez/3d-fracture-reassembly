@@ -5,7 +5,6 @@
 1. `generate_features.py`
     * generates and stores PointNet++ features in `features` folder    
     * generates and stores triplets using the extracted features as descriptors
-
 2. `triplets_train.py` 
     * dataloader: over all keypoints as datapoints
     * updates the triplet after every epoch, recalculate the dataset of triplets using the new MLP weights
@@ -44,7 +43,6 @@ Split the dataset into train and val dataset.
 
 ## Steps to train: 
 1) Run the `generate_features.py` file to create the PointNet++ features folder and calculate (and save) triplets using these features in the triplets folder
-2) 
 ```
 python generate_features.py
 ```
@@ -55,10 +53,12 @@ python triplets_train.py
 ```
 
 Parameters:
-- r_p radius for positive keypoint matches , default 0.001
-- r_n radius for negative keypoints , default 0.04
-- PC_train absolute dataset path 
-- epochs, margin, r_recalculate 
+- r_p: radius for positive keypoint matches (default 0.001)
+- r_n: radius for negative keypoints (default 0.04)
+- PC_train: absolute dataset path 
+- epochs
+- margin
+- r_recalculate 
 
 ***
 
