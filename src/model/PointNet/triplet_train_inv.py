@@ -31,9 +31,9 @@ from find_distances import generate_triplets
 import torch.nn as nn
 
 import torch.nn.functional as F
-PC_PATH_train = "/home/sombit/object_inv/train"
-PC_PATH_val = "/home/sombit/object_inv/val"
-# PC_PATH_test = "/home/sombit/object_inv/test"
+PC_PATH_train = "/home/sombit/object/train"
+PC_PATH_val = "/home/sombit/object/val"
+
 
 
 class dataset_pc(Dataset):
@@ -108,40 +108,10 @@ class dataset_pc(Dataset):
         return anchor, positive, negative
 
     def __getitem__(self, idx):
-        # anchor=np.zeros((1,128))
-        # positive=np.zeros((1,128))
-        # negative=np.zeros((1,128))
-        # obj_file_list = self.triplets_list[int(idx/512)]
-        # # for f in obj_file_list:
-        # dict = np.load(obj_file_list)
-        # anc = dict['anchor'][idx%512,:]
-        # pos = dict['positive'][idx%512,:]
-        # neg = dict['negative'][idx%512,:]
-        
-        # anchor = np.append(anchor, anc, axis=0)
-        # positive = np.append(positive, pos, axis=0)
-        # negative = np.append(negative, neg, axis=0)
-        # anchor = np.delete(anchor, 0, axis = 0)
-        # positive = np.delete(positive, 0, axis = 0)
-        # negative = np.delete(negative, 0, axis = 0)
+
         data = {'anchor': self.anc[idx], 'positive': self.pos[idx], 'negative': self.neg[idx]}
         return data
         
-        # if torch.is_tensor(idx):
-        #     idx = idx.tolist()
-
-        # img_name = os.path.join(self.root_dir,
-        #                         self.landmarks_frame.iloc[idx, 0])
-        # image = io.imread(img_name)
-        # landmarks = self.landmarks_frame.iloc[idx, 1:]
-        # landmarks = np.array([landmarks])
-        # landmarks = landmarks.astype('float').reshape(-1, 2)
-        # sample = {'image': image, 'landmarks': landmarks}
-
-        # if self.transform:
-        #     sample = self.transform(sample)
-
-        # return sample
 
 def load_data(triplet_files):
 
@@ -225,10 +195,6 @@ def save_encoded(dataset_path,feature_folder,encoded_folder):
     net_1.load_state_dict(torch.load('triplet_model.pth'))
     net_1.eval()
     object_type =os.listdir(PC_PATH_train)
-
-    # for object_t in object_type:
-    #     object_t_dir = os.path.join(PC_PATH_train,object_t)
-    #     objects = os.listdir(object_t_dir)
     for object_ in object_type:
         obj_pc_dir = os.path.join(dataset_path,object_)
         obj_enc_dir = os.path.join(obj_pc_dir,encoded_folder)
@@ -278,12 +244,7 @@ def get_achor_pos():
         objects = os.listdir(object_t_dir)
         for object_ in objects:
             obj_pc_dir = os.path.join(object_t_dir,object_)
-            # obj_triplet_dir = os.path.join(obj_pc_dir,"triplets_cls")
 
-            # KEYPOINT_PATH = os.path.join(obj_pc_dir,'keypoints_cls')
-            # # kp_files= sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy")))
-            # kp_files.append(sorted(glob.glob(os.path.join(KEYPOINT_PATH+"/*.npy"))))
-            # DESC_PATH = os.path.join(obj_pc_dir,'features')
             triplet_path = os.path.join(obj_pc_dir,'triplets')
             triplet_files.append(sorted(glob.glob(triplet_path+"/*.npz")))
     anchor, positive, negative = load_data(triplet_files)
@@ -293,12 +254,6 @@ def get_achor_pos():
 if __name__ == "__main__" :
 
 
-    # anchor,positive,negative,kps = get_achor_pos()
-    # kps = torch.from_numpy(kps).float().cuda()
-    # anchor = torch.from_numpy(anchor).float().cuda()
-    # positive = torch.from_numpy(positive).float().cuda()
-    # negative = torch.from_numpy(negative).float().cuda()
-    # lr = 5e-3
     num_epoches = 40
     net=NeuralNetwork()
     # if torch.cuda.is_available() :
@@ -339,22 +294,10 @@ if __name__ == "__main__" :
         for epoch in range(num_epoches):
             running_loss = 0.0
             for i_batch, batch in enumerate(train_dataloader):
-                # print(i_batch, batch['anchor'].size(), batch['positive'].size(), batch['negative'].size())
-                # print(type(batch['anchor']))
-        # for epoch in range(num_epoches):
-            # print('Epoch:', epoch + 1, 'Training...')
-                
-                # for i,data in range(anchor.shape[0]):
-                # if torch.cuda.is_available():
+
                 
                 optimizer.zero_grad()
-                # enc_a = net(anchor[torch.randint(len(anchor), (500,))])  
 
-                # enc_p = net(positive[torch.randint(len(positive), (500,))])
-                # enc_n = net(negative[torch.randint(len(negative), (500,))])
-                # enc_a = net(torch.Tensor(anchor).cuda())
-                # enc_p = net(torch.Tensor(positive).cuda())
-                # enc_n = net(torch.Tensor(negative).cuda())
                 enc_a = net(batch['anchor'].float().cuda())
                 enc_p = net(batch['positive'].float().cuda())
                 enc_n = net(batch['negative'].float().cuda())
@@ -365,7 +308,7 @@ if __name__ == "__main__" :
             # loss, pos_mask, neg_mask = online_mine_hard(kps[:,0],enc_a,margin = 0.1,device ='cuda')
 
                 loss.backward()
-                # torch.nn.utils.clip_grad_norm_(net.parameters(), 1.5)
+                torch.nn.utils.clip_grad_norm_(net.parameters(), 1.5)
                 optimizer.step()
                 scheduler.step()
                 running_loss += loss.item()
@@ -381,13 +324,6 @@ if __name__ == "__main__" :
                 # if torch.cuda.is_available():
                 
                 optimizer.zero_grad()
-                # enc_a = net(anchor[torch.randint(len(anchor), (500,))])  
-
-                # enc_p = net(positive[torch.randint(len(positive), (500,))])
-                # enc_n = net(negative[torch.randint(len(negative), (500,))])
-                # enc_a = net(torch.Tensor(anchor).cuda())
-                # enc_p = net(torch.Tensor(positive).cuda())
-                # enc_n = net(torch.Tensor(negative).cuda())
                 enc_a = net(batch['anchor'].float().cuda())
                 enc_p = net(batch['positive'].float().cuda())
                 enc_n = net(batch['negative'].float().cuda())

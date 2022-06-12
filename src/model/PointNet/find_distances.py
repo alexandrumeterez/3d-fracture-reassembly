@@ -27,12 +27,6 @@ def positive_example(dist):
 def negative_sample(dist,f_dist, min_dist, min_idx):
     dist_sub = dist - min_dist[:, None]
     dist_sub  = dist_sub - 0.04 ## threshold to consider examples outside  a ball of distance of 0.5
-    # mask = dist_sub > 0
-    # print("mask",mask.shape)
-    # print(f_dist.shape)
-    # print(dist.shape ,"hel")
-    # neg_idx = np.argmin(f_dist[mask], axis=1)
-    # neg_dist = dist[neg_idx]
     dist_sub_1 = np.where(dist_sub>0, f_dist, np.inf)
     neg_idx = np.argmin(dist_sub_1, axis=1)
     # print(neg_idx.shape)
