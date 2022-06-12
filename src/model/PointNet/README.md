@@ -1,23 +1,25 @@
 
-# Point net + encoder
+# PointNet++ Encoder
 ## Code Structure Overview
 
-1. generate_features.py 
-    * generate and stores pointnet features in features folder    
-    * generate and stores triplets using these pointnet features as descriptors
+1. `generate_features.py`
+    * generates and stores PointNet++ features in `features` folder    
+    * generates and stores triplets using the extracted features as descriptors
 
-2. triplets_train.py  
-    * dataloader -> over all keypoints as datapoints.  
-    * Updates the triplet after every epoch, recalculate the dataset of triplets using the new MLP weights.
+2. `triplets_train.py` 
+    * dataloader: over all keypoints as datapoints
+    * updates the triplet after every epoch, recalculate the dataset of triplets using the new MLP weights
 ***
 ## Setup 
 Use the environment.yml file in the conda environment
 ```
 conda env create -f environment.yml
 ```
-## Dataset format required : 
-The dataset format for triplet_train.py is given below. <br>
-Sample dataset with features https://drive.google.com/drive/folders/1hvLwhv-7yK5eBSL8z3WQLFZ1KLmY6UMj?usp=sharing
+
+## Dataset format: 
+The dataset format for `triplet_train.py` is given below. <br>
+Sample dataset with features: https://drive.google.com/drive/folders/1hvLwhv-7yK5eBSL8z3WQLFZ1KLmY6UMj?usp=sharing
+```
 - Data 
    - train
        - obj1 
@@ -35,19 +37,23 @@ Sample dataset with features https://drive.google.com/drive/folders/1hvLwhv-7yK5
          - keypoints 
          - *.npy files (point cloud data)
        - ...
+```
 ***
+
 Split the dataset into train and val dataset.
 
 ## Steps to train: 
-1) Run the generate_features.py file, creates pointnet features folder, calculates triplets using these features in the triplets folder 
+1) Run the `generate_features.py` file to create the PointNet++ features folder and calculate (and save) triplets using these features in the triplets folder
+2) 
 ```
 python generate_features.py
 ```
 
-2) Run the triplets_train.py file to train.
+2) Run the `triplets_train.py` file to train.
 ```
 python triplets_train.py
 ```
+
 Parameters:
 - r_p radius for positive keypoint matches , default 0.001
 - r_n radius for negative keypoints , default 0.04
@@ -58,6 +64,8 @@ Parameters:
 
 ## Steps for complete train:  
 The complete_train pipeline is written with test_train split. The requried data format is given below.
+
+```
 - Data 
    - obj1 
       - keypoints 
@@ -66,6 +74,7 @@ The complete_train pipeline is written with test_train split. The requried data 
       - keypoints 
       - *.npy files (point cloud data)
     - ... 
+```
    
 Requires downsampled point cloud data and the corresponding keypoints.
 ```
