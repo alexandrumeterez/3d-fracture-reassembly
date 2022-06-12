@@ -31,7 +31,11 @@ conda env create -f environment.yml
 ```
 python generate_features.py
 ```
-
+Parameters:
+- r_p radius for positive keypoint matches , default 0.001
+- r_n radius for negative keypoints , default 0.04
+- PC_train absolute dataset path 
+- epochs, margin, r_recalculate 
 2) Run the triplets_train.py file to train.
 ```
 python triplets_train.py
@@ -39,7 +43,7 @@ python triplets_train.py
 
 
 ## Steps for complete train:  
-Requires downsampled point cloud data.
+Requires downsampled point cloud data and the corresponding keypoints.
 ```
 python complete_train.py
 ```
