@@ -267,7 +267,7 @@ class Extractor(object):
 
 				# Compute log and save
 				S, R = np.linalg.eig(C_r)
-				S = np.log(S)
+				S = np.log(S + 1e-5)
 				log_C_r = R @ np.diag(S) @ R.T
 				keypoint_cov_mats.append(log_C_r)
 				output_matrix[
