@@ -1,28 +1,33 @@
 
 # Point net + encoder
+## Code Structure Overview
 
 1. generate_features.py 
-    * generate and stores pointnet features in features folder   
-    * generate and stores triplets using these pointnet features as descriptors
+* generate and stores pointnet features in features folder   
+* generate and stores triplets using these pointnet features as descriptors
 
-2 triplets_train.py  
+2. triplets_train.py  
 * dataloader -> over all keypoints as datapoints.  
-* calculate triplet, train for 5 -10 epochs, recalculate the dataloader
+* Updates the triplet after every epoch, recalculate the dataset of triplets using the new MLP weights.
+  
+## Setup 
+Use the environment.yml file in the conda environment
+> conda env create -f environment.yml
+## Dataset format required : 
 
-Dataset format required : 
-
-- Data \
-    - obj1 \
-      - keypoints \
-      - *.npy files (point cloud data)
-    - obj2 \
+- Data 
+    - obj1 
       - keypoints 
-      - *.npy files (point cloud data)\
-    - 
+      - *.npy files (point cloud data)
+    - obj2 
+      - keypoints 
+      - *.npy files (point cloud data)
+    - ...
      
-Steps to train: 
-1) RUN the generate_features.py file, creates pointnet features folder, caculates triplets using these features in the triplets folder 
-2)  RUN the triplets_train.py file to train.
+## Steps to train: 
+1) Run the generate_features.py file, creates pointnet features folder, calculates triplets using these features in the triplets folder 
+2) Run the triplets_train.py file to train.
 
-Steps for complete train: 
-1) >complete_train.py
+## Steps for complete train:  
+Requires downsampled point cloud data.
+>complete_train.py
