@@ -2,7 +2,7 @@
 
 This project consists of multiple pipeline stages. Each toplevel folder inside `/src` contains another ReadMe with the detailed instructions.
 
-Link to the generated data, and other datasets that we created/used during the project: https://polybox.ethz.ch/index.php/s/9Wz9cwWwFLJ3mp5. The example below is made on the `Cubes_8_dense.zip` dataset.
+Link to the generated data, and other datasets that we created/used during the project: https://drive.google.com/drive/folders/1T2JeBnDOLZDon-zXoqyu0Ral6h2YSYhE?usp=sharing. The example below is made on the `Cubes_8_dense.zip` dataset.
 
 ## Overview
 
@@ -22,8 +22,12 @@ python3 classical_method.py --dataset_dir Cube_dense_8/Cube_8_seed_0/ --n_keypoi
 ```
 
 In the `Cube_dense_8/Cube_8_seed_0/` there will now be a `keypoints/` folder containing the features for each shard. Afterwards, to perform the reconstruction:
-```
-```
+
+1. Open the `main_reassembly.m` file. This contains multiple blocks which need to be run sequentially. Refer to the comments for better understanding.
+2. No need to change any default parameters if using the above command for generating the keypoints. 
+3. Open the `import_3d_classical.m` and set the path for the fragments and keypoints directory.
+4. Sequentially execute the blocks of `main_reassembly.m`. No need to execute the step2 of the `main_reassembly.m` since it is only required while using the groundtruth for establishing keypoint correspondences.
+
 
 Final result:
 ![Recon](images/cuberecon.jpeg)
