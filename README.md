@@ -1,6 +1,6 @@
 # 3D Feature Point Learning for Fractured Object Reassembly
 
-This project consists of multiple pipeline stages. Each toplevel folder inside `/src` contains another ReadMe with the detailed instructions.
+This project consists of multiple pipeline stages. Each toplevel folder inside `/src` contains another README with the detailed instructions.
 
 Link to the generated data, and other datasets that we created/used during the project: https://drive.google.com/drive/folders/1T2JeBnDOLZDon-zXoqyu0Ral6h2YSYhE?usp=sharing. The example below is made on the `Cubes_8_dense.zip` dataset.
 
