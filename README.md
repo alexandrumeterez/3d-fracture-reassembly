@@ -4,13 +4,13 @@ This project consists of multiple pipeline stages. Each toplevel folder inside `
 
 Link to the generated data, and other datasets that we created/used during the project: https://drive.google.com/drive/folders/1T2JeBnDOLZDon-zXoqyu0Ral6h2YSYhE?usp=sharing. The example below is made on the `Cubes_8_dense.zip` dataset.
 
-## Overview
+## Overview (and individual READMEs)
 
-- `/src/dataset_generation` contains files to generate fractures saved in `.npy` format out of `.obj` 3D Meshes.
+- `/src/dataset_generation` contains files to generate fractures saved in `.npy` format out of `.obj` 3D Meshes - [README](https://www.google.com](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/code_cleanup/src/dataset_generation/README.md))
 - `/src/model` contains the keypoint and descriptor generation in two ways:
-    1. Classical Method from https://ieeexplore.ieee.org/document/9279208
-    2. Learned Method based on PointNet++
-- `/src/optimization` contains the final reassembly optimizer for the fragments with its descriptors. 
+    1. Classical Method from https://ieeexplore.ieee.org/document/9279208 - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/code_cleanup/src/model/classical/keypoints/README.md)
+    2. Learned Method based on PointNet++ - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/code_cleanup/src/model/PointNet/README.md)
+- `/src/optimization` contains the final reassembly optimizer for the fragments with its descriptors - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/code_cleanup/src/optimization/readme.md)
 
 ## Step by step reassembly tutorial
 
