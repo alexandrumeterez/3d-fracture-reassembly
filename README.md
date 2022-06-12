@@ -24,3 +24,6 @@ python3 classical_method.py --dataset_dir Cube_dense_8/Cube_8_seed_0/ --n_keypoi
 In the `Cube_dense_8/Cube_8_seed_0/` there will now be a `keypoints/` folder containing the features for each shard. Afterwards, to perform the reconstruction:
 ```
 ```
+
+Final result:
+![Recon](images/cuberecon.jpeg)
