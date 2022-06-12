@@ -123,14 +123,14 @@ def iterate_over_files(pc_files, kp_files, classifier,obj_f_dir):
         desc = descriptors(pc_file, kp_file, classifier)
         store_desc(desc, obj_f_dir, kp_file)
 
-object_paths_list = ['/home/sombit/object_inv/train/','/home/sombit/object_inv/val/'] 
+object_paths_list = ['/home/sombit/dataset/val1','/home/sombit/dataset/train1'] 
 keypoints_folder = 'keypoints'
 features_folder= 'features'
 
 # features_folder = 'features'
 triplets_folder = 'triplets'
 encoded_folder = 'encoded'
-store_feature = True
+store_feature = False
 store_triplet = True
 # model_path = 'triplet_model_new.pth'
 
