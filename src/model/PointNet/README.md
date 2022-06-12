@@ -18,14 +18,25 @@ conda env create -f environment.yml
 ## Dataset format required : 
 
 - Data 
-    - obj1 
-      - keypoints 
-      - *.npy files (point cloud data)
-    - obj2 
-      - keypoints 
-      - *.npy files (point cloud data)
-    - ...
+   - train
+       - obj1 
+         - keypoints 
+         - *.npy files (point cloud data)
+       - obj2 
+         - keypoints 
+         - *.npy files (point cloud data)
+       - ...
+    - val
+       - obj1 
+         - keypoints 
+         - *.npy files (point cloud data)
+       - obj2 
+         - keypoints 
+         - *.npy files (point cloud data)
+       - ...
 ***
+Split the dataset into train and val dataset.
+
 ## Steps to train: 
 1) Run the generate_features.py file, creates pointnet features folder, calculates triplets using these features in the triplets folder 
 ```
@@ -44,6 +55,16 @@ Parameters:
 
 
 ## Steps for complete train:  
+The complete_train pipeline is written with test_train split. The requried data format is given below.
+- Data 
+   - obj1 
+      - keypoints 
+      - *.npy files (point cloud data)
+    - obj2 
+      - keypoints 
+      - *.npy files (point cloud data)
+    - ... 
+   
 Requires downsampled point cloud data and the corresponding keypoints.
 ```
 python complete_train.py
