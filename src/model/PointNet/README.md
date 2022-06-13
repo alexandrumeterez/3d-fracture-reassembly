@@ -61,6 +61,10 @@ Parameters:
 - margin
 - r_recalculate 
 
+## Steps for inference:
+During inference, the script `encode_descripters.py` will be required. 
+1) Run `generate_features.py` to obtain the PointNet++ features. The script expects the same data format as above under the test folder
+2) Run`encode_descriptors.py` with the correct model_weights (.pth file) and PC_PATH to obtain the descriptors in the encoded folder
 ***
 
 ## Steps for complete train:
