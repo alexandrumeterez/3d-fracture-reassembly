@@ -43,7 +43,7 @@ Split the dataset into train and val dataset.
 
 ## Steps to train: 
 In this training approach we first extract the pointnet features (implying frozen pointnet weights) and train the MLP layers independantly. 
-1) Run the `generate_features.py` file to create the PointNet++ features folder and calculate (and save) triplets using these features in the triplets folder
+1) Run the `generate_features.py` file to create the PointNet++ features folder  and calculate (and save) triplets using these features in the triplets folder
 ```
 python generate_features.py
 ```
@@ -63,8 +63,8 @@ Parameters:
 
 ## Steps for inference:
 During inference, the script `encode_descripters.py` will be required. 
-1) Run `generate_features.py` to obtain the PointNet++ features. The script expects the same data format as above under the test folder
-2) Run`encode_descriptors.py` with the correct model_weights (.pth file , in the drive link above) and PC_PATH to obtain the descriptors in the encoded folder
+1) Run `generate_features.py` to obtain the PointNet++ features . The script expects the same data format as above under the test folder
+2) Run `encode_descriptors.py` with the correct model_weights (`.pth file` , in the drive link above) and PC_PATH to obtain the descriptors in the encoded folder
 ***
 
 ## Steps for complete train:
