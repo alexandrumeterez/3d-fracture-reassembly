@@ -6,7 +6,7 @@
     * generates and stores PointNet++ features in `features` folder    
     * generates and stores triplets using the extracted features as descriptors
 2. `triplets_train.py` 
-    * dataloader: over all keypoints as datapoints
+    * dataloader: generates the pytorch dataloader with only keypoints and its descriptors for all the objects in the dataset
     * updates the triplet after every epoch, recalculate the dataset of triplets using the new MLP weights
 ***
 ## Setup 
@@ -42,6 +42,7 @@ Sample dataset with features: https://drive.google.com/drive/folders/1hvLwhv-7yK
 Split the dataset into train and val dataset.
 
 ## Steps to train: 
+In this training approach we first extract the pointnet features (implying frozen pointnet weights) and train the MLP layers independantly. 
 1) Run the `generate_features.py` file to create the PointNet++ features folder and calculate (and save) triplets using these features in the triplets folder
 ```
 python generate_features.py
@@ -62,7 +63,8 @@ Parameters:
 
 ***
 
-## Steps for complete train:  
+## Steps for complete train:
+This approach is used to train both the PointNet++ and MLP model end-to-end.
 The complete_train pipeline is written with test_train split. The requried data format is given below.
 
 ```
