@@ -39,7 +39,7 @@ Sample dataset with features with the MLP model weights which is required in the
 ```
 ***
 
-Split the dataset into train and val dataset.
+Split the dataset into train and val folders.
 
 ## Steps to train: 
 In this training approach we first extract the pointnet features (implying frozen pointnet weights) and train the MLP layers independantly. 
