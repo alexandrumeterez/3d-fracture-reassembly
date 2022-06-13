@@ -6,11 +6,11 @@ Link to the generated data, and other datasets that we created/used during the p
 
 ## Overview (and individual READMEs)
 
-- `/src/dataset_generation` contains files to generate fractures saved in `.npy` format out of `.obj` 3D Meshes - [README](https://www.google.com](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/src/dataset_generation/README.md))
+- `/src/dataset_generation` contains files to generate fractures saved in `.npy` format out of `.obj` 3D Meshes - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/main/src/dataset_generation/README.md)
 - `/src/model` contains the keypoint and descriptor generation in two ways:
-    1. Classical Method from https://ieeexplore.ieee.org/document/9279208 - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/src/model/classical/keypoints/README.md)
-    2. Learned Method based on PointNet++ - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/src/model/PointNet/README.md)
-- `/src/optimization` contains the final reassembly optimizer for the fragments with its descriptors - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/src/optimization/readme.md)
+    1. Classical Method from https://ieeexplore.ieee.org/document/9279208 - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/main/src/model/classical/keypoints/README.md)
+    2. Learned Method based on PointNet++ - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/main/src/model/PointNet/README.md)
+- `/src/optimization` contains the final reassembly optimizer for the fragments with its descriptors - [README](https://github.com/alexandrumeterez/3d-fracture-reassembly/blob/main/src/optimization/readme.md)
 
 ## Step by step reassembly tutorial
 
