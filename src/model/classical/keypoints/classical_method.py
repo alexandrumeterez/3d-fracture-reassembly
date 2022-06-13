@@ -1,7 +1,6 @@
-from turtle import color
 import numpy as np
 from scipy import spatial
-import os
+import os,sys
 import argparse
 import time
 import scipy
@@ -374,7 +373,7 @@ def visualize_matches(extractor1, extractor2, n_points, n_scales, threshold, num
 	x_lines = []
 	y_lines = []
 	z_lines = []
-	c = [4, 0, 0]
+	c = [2, 0, 0]
 	colors1 = ["blue" for _ in range(n_points)]
 	colors2 = ["blue" for _ in range(n_points)]
 	min_d = 99
@@ -477,19 +476,19 @@ if __name__ == "__main__":
 	parser.add_argument("--mode", default=2, type=int)
 	parser.add_argument("--dataset_dir", default="Cube_dense_8_seed_0", type=str)
 	parser.add_argument("--num_features", default=3, type=int)
-	parser.add_argument("--keypoint_radius", type=float, default=0.012)
-	parser.add_argument("--n_keypoints", type=int, default=2000)
-	parser.add_argument("--r_vals", nargs="+", default=[0.02, 0.1, 0.15], type=float)
-	parser.add_argument("--threshold", type=float, default=1.2)
+	parser.add_argument("--keypoint_radius", type=float, default=0.04)
+	parser.add_argument("--n_keypoints", type=int, default=512)
+	parser.add_argument("--r_vals", nargs="+", default=[0.04, 0.05, 0.06, 0.08, 0.10], type=float)
+	parser.add_argument("--threshold", type=float, default=0.2)
 	parser.add_argument("--k", type=float, default=150)
 	parser.add_argument("--lbd", type=float, default=2)
 	parser.add_argument("--nms", action='store_true')
-	parser.add_argument("--nms_rad", type=float, default=0.05)
+	parser.add_argument("--nms_rad", type=float, default=0.04)
 	parser.add_argument(
-		"--fragment1", type=str, default="Cube_dense_8_seed_0/Cube_shard_0.npy"
+		"--fragment1", type=str, default=os.path.dirname(os.path.abspath(__file__))+"/Cube_dense_8_seed_0/Cube_shard_3.npy"
 	)
 	parser.add_argument(
-		"--fragment2", type=str, default="Cube_dense_8_seed_0/Cube_shard_1.npy"
+		"--fragment2", type=str, default=os.path.dirname(os.path.abspath(__file__))+"/Cube_dense_8_seed_0/Cube_shard_5.npy"
 	)
 	args = parser.parse_args()
 
