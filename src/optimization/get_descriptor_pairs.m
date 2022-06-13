@@ -8,7 +8,7 @@ d_dist = [];
 gt_dist = [];
 
 % Config
-max_pairs = 10;
+max_pairs = 50;
 max_d = 0.2; %Threshold value. Pairs with d>max_d will be discarded
 
 features1 = kp{index1}.rp.features;

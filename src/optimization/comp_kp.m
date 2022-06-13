@@ -1,18 +1,19 @@
 function [f,kp,kp_index,kp_corr,frag_corr] = comp_kp(f,kp,knn_r)
 % Descripton: Find keypoint neighbours on other fragments
 % Input: f (fragments), kp (keypoints), knn_r (radius for neighbor search)
-% knn_r: cube_6 = 0.08, brick = 0.5 (depends on model dimensions)
+% knn_r: Synthetic = 0.01, Real_world = 0.03 - 0.05 (depends on model dimensions)
 % Output: f, kp, kp_index (table of all keypoints), 
 % kp_corr (correlation matrix of all keypoints)
 % frag_corr (keypoint correlation matrix with fragment IDs)
 % -------------------------------
-% Semester project 3D vision lecture
+% Semester project 3D Vision 2022
 % 3D Feature Point Learning for Fractured Object Reassembly
-% Team: Du Chaoyu (chaoyu.du@arch.ethz.ch)
-% Ulrich Steger (ulsteger@student.ethz.ch)
-% Eshaan Mudga (emudgal@student.ethz.ch) 
-% Florian Hürlimann (fhuerliman@student.ethz.ch)
-% Author of this code: F. Huerlimann
+% Team: Manthan Patel (patelm@student.ethz.ch)
+% Sombit Dey (somdey@student.ethz.ch)
+% Alexandru Meterez (ameterez@student.ethz.ch) 
+% Adrian Hartmann (haadrian@student.ethz.ch)
+% Author of this code: Manthan Patel
+% Original Code author: Florian Hürlimann
 
 % Config
 % ------
@@ -29,7 +30,7 @@ end
 
 if nargin < 3
     % default value
-    knn_r = 0.05; % Radius for knn search of adjacent fragment points
+    knn_r = 0.01; % Radius for knn search of adjacent fragment points
 end
 vdisp(['knn radius: ', num2str(knn_r)]);
 
@@ -49,7 +50,7 @@ for k=1:length(kp)
     for i=1:length(kp{k}.gt.x)
         % Column index
         kp_id = kp_id + 1;
-
+        kp{k}.gt.sigma(i) = 1;
         % Insert data into keypoint index table
         kp_index(kp_id,1) = kp_id;
         kp_index(kp_id,2) = k;
@@ -84,7 +85,7 @@ for k=1:length(kp)
            if j~=k
                
                ptCloud = pointCloud([kp{j}.gt.x, kp{j}.gt.y, kp{j}.gt.z]);
-               [indices] = findNeighborsInRadius(ptCloud,keypoint,knn_r);
+               [indices, dists] = findNeighborsInRadius(ptCloud,keypoint,knn_r);
                if ~isempty(indices)
                    % There are 1 or more neighbor keypoints ...
                    vdisp('--------------');
@@ -96,19 +97,13 @@ for k=1:length(kp)
                    
                    % Get delta sigmas of neighbor keypoints
                    delta_sigma_list = abs(kp{j}.gt.sigma(indices) - kp{k}.gt.sigma(i));
-                   
-                   [min_pos] = find(delta_sigma_list == min(delta_sigma_list));
-                   % If multiple minima, chose first
-                   if length(min_pos) > 1
-                       min_pos = min_pos(1);
-                   end
-                   
-                   vdisp(['Optimal neighbor (min delta sigma): ', num2str(min_pos), ...
-                       ', delta sigma: ', num2str(delta_sigma_list(min_pos))]);
-                   
+                   [M,I] = min(dists);
+              
+                   min_pos = dists(I);
+     
                    % Add keypoints to correspondency matrix
                    row_index = kp{k}.gt.kp_id(i);
-                   col_index = kp{j}.gt.kp_id(indices);
+                   col_index = kp{j}.gt.kp_id(indices(I));
                    kp_corr(row_index, col_index) = kp_corr(row_index, col_index) + 1;
                    kp{k}.gt.neighbors(i) = kp{k}.gt.neighbors(i) + length(indices);
                    

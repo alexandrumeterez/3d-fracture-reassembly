@@ -23,7 +23,7 @@ function [f_out, kp_out] = assy_3d(f,kp,kp_corr,frag_corr)
 % Config
 plot_poses_flag = 0; % Plot all pairwise poses
 plot_result_flag = 1; % Plot graph, assembly
-use_ground_truth = 1; % keypoint pair selection based on ground truth
+use_ground_truth = 0; % keypoint pair selection based on ground truth
 use_rigid_transformation = 1; % enable helmert_nd()
 add_isolated_fragments = 1; % fop fragments without triple match
 
@@ -478,7 +478,7 @@ for i=1:length(f)
 end
 
 % Define reference (start) node
-ref_node = 6; % Manually chosen
+ref_node = 1; % Manually chosen
 disp(['Reference (start) node = ',num2str(ref_node)]);
 f{ref_node}.assy = f{ref_node}.rp;
 kp{ref_node}.assy = kp{ref_node}.rp;

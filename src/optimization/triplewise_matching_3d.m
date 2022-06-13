@@ -1,10 +1,7 @@
 function [T_32_gt,T_32_est,constraint] = triplewise_matching_3d(comb_pairwise,matching_pairwise,triple_index,th_R,th_T)
-% Inputs:
-% comb_pairwise (tuples, e.g. size 231x2), matching_pairwise (e.g. size 231x1),
-% triple_index (triples, e.g. 1540x3), params th_R, th_T (FH: unclear)
 
 % Config
-plot_on = 1;
+plot_on = 0;
 
 if plot_on == 1
     disp('----------- triplewise_matching_3d -----------');
@@ -65,18 +62,18 @@ else
     % Check if angle and distance difference are below threshold values
     if (angle_diff < th_R && distance_diff < th_T)
         constraint = 0;
-        disp('Triplewise match!');
-        disp(['Fragments: ', num2str(triple_index)]);
-        disp(['angle difference (rad) = ',num2str(angle_diff)]);
-        disp(['distance distance = ',num2str(distance_diff)]);
-        disp('T_32:');
-        disp(T_32);
-        disp('T_12:');
-        disp(T_12);
-        disp('T_31:');
-        disp(T_31);
+%         disp('Triplewise match!');
+%         disp(['Fragments: ', num2str(triple_index)]);
+%         disp(['angle difference (rad) = ',num2str(angle_diff)]);
+%         disp(['distance distance = ',num2str(distance_diff)]);
+%         disp('T_32:');
+%         disp(T_32);
+%         disp('T_12:');
+%         disp(T_12);
+%         disp('T_31:');
+%         disp(T_31);
     else
-        disp('Angle and/or distance obove threshold!');
+%         disp('Angle and/or distance obove threshold!');
         constraint = 1;
     end
 
@@ -110,9 +107,9 @@ else
        disp(constraint)
 
        if constraint == 0
-           disp('Match!');
+%            disp('Match!');
        else
-           disp('No match.');
+%            disp('No match.');
        end
     end
 

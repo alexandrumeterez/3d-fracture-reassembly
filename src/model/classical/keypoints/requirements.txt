@@ -1,0 +1,3 @@
+plotly
+scipy
+open3d

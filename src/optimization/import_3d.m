@@ -2,13 +2,14 @@ function [f,kp,ft] = import_3d
 % Descripton: Import fragment, keypoints 3D clouds, feature descriptors
 % Output: f (fragments), kp (keypoints), feature descriptors (ft)
 % -------------------------------
-% Semester project 3D vision lecture
+% Semester project 3D Vision 2022
 % 3D Feature Point Learning for Fractured Object Reassembly
-% Team: Du Chaoyu (chaoyu.du@arch.ethz.ch)
-% Ulrich Steger (ulsteger@student.ethz.ch)
-% Eshaan Mudga (emudgal@student.ethz.ch) 
-% Florian Hürlimann (fhuerliman@student.ethz.ch)
-% Author of this code: F. Huerlimann
+% Team: Manthan Patel (patelm@student.ethz.ch)
+% Sombit Dey (somdey@student.ethz.ch)
+% Alexandru Meterez (ameterez@student.ethz.ch) 
+% Adrian Hartmann (haadrian@student.ethz.ch)
+% Author of this code: Manthan Patel
+% Original Code author: Florian Hürlimann
 
 % nomenclature:
 % gt = ground truth
@@ -18,15 +19,12 @@ function [f,kp,ft] = import_3d
 
 % Config
 % ------
-% Cube_6 dataset (synthetic/blender)
-data_dir_fragment = 'data/fragments/cube_6'; % fragment *.npy directory
-data_dir_kp = 'data/keypoints/cube_6_FN'; % keypoint *.npy directory
-data_dir_ft = 'data/encoded_desc/cube_6_FN'; % features *.npy directory
 
-% Brick dataset (3d scan)
-%data_dir_fragment = 'data/fragments/brick'; % fragment *.npy directory
-%data_dir_kp = 'data/keypoints/brick_1vN'; % keypoint *.npy directory
-%data_dir_ft = 'data/encoded_desc/brick_1vN'; % features *.npy directory
+% Learned Descriptors Datasets
+% Cube trial (3d scan)
+data_dir_fragment = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/'; % fragment *.npy directory
+data_dir_kp = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/keypoints'; % keypoint *.npy directory
+data_dir_ft = 'data/fragments/Cube_8_seed_0_train-20220608T161008Z-001/Cube_8_seed_0_train/encoded'; % features *.npy directory
 
 rng(0); % Initialize random seed for reproducibility
 max_rotation = pi; % Max angle (rad) for random pose
@@ -72,7 +70,7 @@ for k=1:length(d)
 end
 cd(old_dir);
 
-if length(f)~=length(kp) || length(f)~=length(ft)
+if length(f)~=length(kp) 
     error('unequal number of fragments.');
 else
     disp(['Number of fragments: ',num2str(length(f))]);
@@ -121,7 +119,6 @@ for k=1:length(kp)
     kp{k}.gt.x = npy(:,1);
     kp{k}.gt.y = npy(:,2);
     kp{k}.gt.z = npy(:,3);
-    kp{k}.gt.sigma = npy(:,4);
     
     % Calculate xyz dimension
     kp{k}.gt.x_size = max(npy(:,1)) - min(npy(:,1));
@@ -204,15 +201,12 @@ for k=1:length(f)
     kp{k}.rp.R = R;
     kp{k}.rp.transformation_rp = [R, T; [0 0 0 1]];
     
-    % Add feature descriptor sigma (saliency score)
-    kp{k}.rp.sigma = kp{k}.gt.sigma;
-    
     % Calculate mean point
     kp{k}.rp.x_mean = mean(kp{k}.rp.x);
     kp{k}.rp.y_mean = mean(kp{k}.rp.y);
     kp{k}.rp.z_mean = mean(kp{k}.rp.z);
     
-    % Add features
+%     Add features
     kp{k}.rp.features = kp{k}.gt.features;
 end
 
@@ -284,6 +278,5 @@ if plot_flag == true
     hold off;
 end
 
-%fig = gcf; exportgraphics(fig,'distance_correlation.png','Resolution',300);
 % End main function
 end

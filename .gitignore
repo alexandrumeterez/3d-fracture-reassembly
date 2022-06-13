@@ -3,3 +3,10 @@
 __pycache__/
 wandb/
 lsf*
+*.npy
+*.html
+*.zip
+src/optimization/data/fragments
+
+venv
+.venv
