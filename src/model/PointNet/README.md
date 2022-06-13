@@ -43,7 +43,7 @@ Split the dataset into train and val dataset.
 
 ## Steps to train: 
 In this training approach we first extract the pointnet features (implying frozen pointnet weights) and train the MLP layers independantly. 
-1) Run the `generate_features.py` file to create the PointNet++ features folder and calculate (and save) triplets using these features in the triplets folder
+1) Run the `generate_features.py` file to create the PointNet++ features folder as mentioned above, and calculate (and save) triplets using these features in the triplets folder
 ```
 python generate_features.py
 ```
