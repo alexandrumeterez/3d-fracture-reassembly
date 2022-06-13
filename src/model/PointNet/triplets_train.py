@@ -222,6 +222,7 @@ triplets_folder = 'triplets'
 encoded_folder = 'encoded'
 r_p = 0.001
 r_n = 0.04
+r_recalculate = 4
 def generate_new_trips(dataset_path,net):
     net = net.eval()
     object_type =os.listdir(dataset_path)
@@ -344,7 +345,7 @@ if __name__ == "__main__" :
             if(running_loss_val/len(val_dataloader) <=best):
                 torch.save(net.state_dict(), 'triplet_model_best.pth')
                 best = running_loss/len(train_dataloader)
-            if(epoch %5 ==4):
+            if(epoch %r_recalculate ==r_recalculate-1):
                 save_encoded(PC_PATH_train,features_folder,encoded_folder)
                 save_encoded(PC_PATH_val,features_folder,encoded_folder)
                 generate_new_trips(PC_PATH_train,net)
