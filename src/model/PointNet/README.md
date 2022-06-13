@@ -17,7 +17,7 @@ conda env create -f environment.yml
 
 ## Dataset format: 
 The dataset format for `triplet_train.py` is given below. <br>
-Sample dataset with features: https://drive.google.com/drive/folders/1hvLwhv-7yK5eBSL8z3WQLFZ1KLmY6UMj?usp=sharing
+Sample dataset with features with the MLP model weights which is required in the further steps below: https://drive.google.com/drive/folders/1hvLwhv-7yK5eBSL8z3WQLFZ1KLmY6UMj?usp=sharing
 ```
 - Data 
    - train
@@ -64,7 +64,7 @@ Parameters:
 ## Steps for inference:
 During inference, the script `encode_descripters.py` will be required. 
 1) Run `generate_features.py` to obtain the PointNet++ features. The script expects the same data format as above under the test folder
-2) Run`encode_descriptors.py` with the correct model_weights (.pth file) and PC_PATH to obtain the descriptors in the encoded folder
+2) Run`encode_descriptors.py` with the correct model_weights (.pth file , in the drive link above) and PC_PATH to obtain the descriptors in the encoded folder
 ***
 
 ## Steps for complete train:
