@@ -61,11 +61,6 @@ Parameters:
 - margin
 - r_recalculate 
 
-## Steps for inference:
-During inference, the script `encode_descripters.py` will be required. 
-1) Run `generate_features.py` to obtain the PointNet++ features . The script expects the same data format as above under the test folder
-2) Run `encode_descriptors.py` with the correct model_weights (`.pth file` , in the drive link above) and PC_PATH to obtain the descriptors in the encoded folder
-***
 
 ## Steps for complete train:
 This approach is used to train both the PointNet++ and MLP model end-to-end.
@@ -86,4 +81,10 @@ Requires downsampled point cloud data and the corresponding keypoints.
 ```
 python complete_train.py
 ```
+***
 
+## Steps for inference:
+During inference, the script `encode_descriptors.py` will be required. 
+1) Run `generate_features.py` to obtain the PointNet++ features . The script expects the same data format as above under the test folder
+2) Run `encode_descriptors.py` with the correct model_weights (`.pth file` , in the drive link above) and PC_PATH to obtain the descriptors in the encoded folder
+***
